@@ -1,0 +1,350 @@
+
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
+import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { Colors } from '../../constants/Colors';
+
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { authAPI } from '../../services/api';
+
+export default function SignupScreen() {
+    const router = useRouter();
+    const [name, setName] = useState('');
+    const [email, setEmail] = useState('');
+    const [phone, setPhone] = useState('');
+    const [address, setAddress] = useState('');
+    const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [role, setRole] = useState<'user' | 'professional'>('user');
+    const [serviceCategory, setServiceCategory] = useState('');
+    const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+    const [idProof, setIdProof] = useState('');
+
+    const handleSignup = async () => {
+        try {
+            const payload = {
+                name,
+                email,
+                phone,
+                address,
+                password,
+                role,
+                ...(role === 'professional' && { serviceCategory, idProof, isAvailable: true })
+            };
+            const { data } = await authAPI.register(payload);
+            await AsyncStorage.setItem('user', JSON.stringify(data));
+
+            if (role === 'professional') {
+                Alert.alert('Success', 'Partner account created! waiting for admin approval.');
+            }
+
+            router.replace('/(tabs)');
+        } catch (error: any) {
+            console.error(error);
+            alert('Signup failed.');
+        }
+    };
+
+    return (
+        <SafeAreaView style={styles.container}>
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={{ flex: 1 }}
+            >
+                <ScrollView contentContainerStyle={styles.scrollContent}>
+
+                    <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+                        <Ionicons name="arrow-back" size={24} color={Colors.text} />
+                    </TouchableOpacity>
+
+                    <View style={styles.header}>
+                        <Text style={styles.title}>Create Account</Text>
+                        <Text style={styles.subtitle}>Join QuickHomies today!</Text>
+                    </View>
+
+                    {/* Role Switcher */}
+                    <View style={styles.roleContainer}>
+                        <TouchableOpacity
+                            style={[styles.roleButton, role === 'user' && styles.roleButtonActive]}
+                            onPress={() => setRole('user')}
+                        >
+                            <Text style={[styles.roleText, role === 'user' && styles.roleTextActive]}>Customer</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[styles.roleButton, role === 'professional' && styles.roleButtonActive]}
+                            onPress={() => setRole('professional')}
+                        >
+                            <Text style={[styles.roleText, role === 'professional' && styles.roleTextActive]}>Partner</Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    <View style={styles.formContainer}>
+
+                        <View style={styles.inputWrapper}>
+                            <Ionicons name="person-outline" size={20} color={Colors.textLight} style={styles.inputIcon} />
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Full Name"
+                                placeholderTextColor={Colors.textLight}
+                                value={name}
+                                onChangeText={setName}
+                            />
+                        </View>
+
+                        <View style={styles.inputWrapper}>
+                            <Ionicons name="mail-outline" size={20} color={Colors.textLight} style={styles.inputIcon} />
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Email Address"
+                                placeholderTextColor={Colors.textLight}
+                                keyboardType="email-address"
+                                autoCapitalize="none"
+                                value={email}
+                                onChangeText={setEmail}
+                            />
+                        </View>
+
+                        <View style={styles.inputWrapper}>
+                            <Ionicons name="call-outline" size={20} color={Colors.textLight} style={styles.inputIcon} />
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Phone Number"
+                                placeholderTextColor={Colors.textLight}
+                                keyboardType="phone-pad"
+                                value={phone}
+                                onChangeText={setPhone}
+                            />
+                        </View>
+
+                        <View style={styles.inputWrapper}>
+                            <Ionicons name="location-outline" size={20} color={Colors.textLight} style={styles.inputIcon} />
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Address"
+                                placeholderTextColor={Colors.textLight}
+                                value={address}
+                                onChangeText={setAddress}
+                            />
+                        </View>
+
+                        {role === 'professional' && (
+                            <View>
+                                <TouchableOpacity
+                                    style={styles.inputWrapper}
+                                    onPress={() => setShowCategoryPicker(!showCategoryPicker)}
+                                >
+                                    <Ionicons name="briefcase-outline" size={20} color={Colors.textLight} style={styles.inputIcon} />
+                                    <Text style={[styles.input, !serviceCategory && { color: Colors.textLight }]}>
+                                        {serviceCategory || 'Select Service Category'}
+                                    </Text>
+                                    <Ionicons name="chevron-down-outline" size={20} color={Colors.textLight} />
+                                </TouchableOpacity>
+
+                                {showCategoryPicker && (
+                                    <View style={styles.dropdownContainer}>
+                                        {SERVICE_CATEGORIES.map((cat) => (
+                                            <TouchableOpacity
+                                                key={cat}
+                                                style={styles.dropdownItem}
+                                                onPress={() => {
+                                                    setServiceCategory(cat);
+                                                    setShowCategoryPicker(false);
+                                                }}
+                                            >
+                                                <Text style={styles.dropdownItemText}>{cat}</Text>
+                                            </TouchableOpacity>
+                                        ))}
+                                    </View>
+                                )}
+                            </View>
+                        )}
+
+                        {role === 'professional' && (
+                            <View style={styles.inputWrapper}>
+                                <Ionicons name="card-outline" size={20} color={Colors.textLight} style={styles.inputIcon} />
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="Govt ID Number (Aadhar/PAN)"
+                                    placeholderTextColor={Colors.textLight}
+                                    value={idProof}
+                                    onChangeText={setIdProof}
+                                />
+                            </View>
+                        )}
+
+                        <View style={styles.inputWrapper}>
+                            <Ionicons name="lock-closed-outline" size={20} color={Colors.textLight} style={styles.inputIcon} />
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Password"
+                                placeholderTextColor={Colors.textLight}
+                                secureTextEntry={!showPassword}
+                                value={password}
+                                onChangeText={setPassword}
+                            />
+                            <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                                <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={20} color={Colors.textLight} />
+                            </TouchableOpacity>
+                        </View>
+
+                        <TouchableOpacity style={styles.signupButton} onPress={handleSignup}>
+                            <Text style={styles.signupButtonText}>Sign Up</Text>
+                        </TouchableOpacity>
+
+                    </View>
+
+                    <View style={styles.footer}>
+                        <Text style={styles.footerText}>Already have an account? </Text>
+                        <TouchableOpacity onPress={() => router.push('/auth/login')}>
+                            <Text style={styles.loginText}>Login</Text>
+                        </TouchableOpacity>
+                    </View>
+
+                </ScrollView>
+            </KeyboardAvoidingView>
+        </SafeAreaView>
+    );
+}
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: Colors.secondary,
+    },
+    scrollContent: {
+        flexGrow: 1,
+        padding: 20,
+        justifyContent: 'center',
+    },
+    backButton: {
+        position: 'absolute',
+        top: 20,
+        left: 20,
+        padding: 10,
+        zIndex: 10,
+    },
+    header: {
+        marginTop: 60,
+        marginBottom: 40,
+    },
+    title: {
+        fontSize: 32,
+        fontWeight: 'bold',
+        color: Colors.primary,
+        marginBottom: 10,
+    },
+    subtitle: {
+        fontSize: 18,
+        color: Colors.textLight,
+    },
+    formContainer: {
+        marginBottom: 30,
+    },
+    inputWrapper: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: Colors.gray,
+        borderRadius: 12,
+        paddingHorizontal: 15,
+        paddingVertical: 12,
+        marginBottom: 15,
+        borderWidth: 1,
+        borderColor: Colors.border,
+    },
+    inputIcon: {
+        marginRight: 10,
+    },
+    input: {
+        flex: 1,
+        fontSize: 16,
+        color: Colors.text,
+    },
+    signupButton: {
+        backgroundColor: Colors.primary,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 16,
+        borderRadius: 14,
+        marginTop: 10,
+        shadowColor: Colors.primary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 5,
+    },
+    signupButtonText: {
+        color: Colors.secondary,
+        fontSize: 18,
+        fontWeight: 'bold',
+    },
+    footer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        marginTop: 20,
+    },
+    footerText: {
+        fontSize: 16,
+        color: Colors.textLight,
+    },
+    loginText: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: Colors.primary,
+    },
+    roleContainer: {
+        flexDirection: 'row',
+        marginBottom: 20,
+        backgroundColor: Colors.gray,
+        borderRadius: 12,
+        padding: 4,
+    },
+    roleButton: {
+        flex: 1,
+        paddingVertical: 12,
+        alignItems: 'center',
+        borderRadius: 10,
+    },
+    roleButtonActive: {
+        backgroundColor: Colors.primary,
+    },
+    roleText: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: Colors.textLight,
+    },
+    roleTextActive: {
+        color: Colors.secondary,
+    },
+    dropdownContainer: {
+        marginTop: -10,
+        marginBottom: 15,
+        backgroundColor: Colors.gray,
+        borderRadius: 12,
+        padding: 5,
+        borderWidth: 1,
+        borderColor: Colors.border,
+    },
+    dropdownItem: {
+        paddingVertical: 12,
+        paddingHorizontal: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: Colors.border,
+    },
+    dropdownItemText: {
+        fontSize: 16,
+        color: Colors.text,
+    },
+});
+
+const SERVICE_CATEGORIES = [
+    'Electrician',
+    'Plumber',
+    'Maid',
+    'Barber',
+    'Driver',
+    'Party Planner',
+    'Caretaker',
+    'Other'
+];

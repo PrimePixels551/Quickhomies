@@ -1,0 +1,46 @@
+{
+    "cli": {
+        "version": ">= 5.0.0"
+    },
+    "build": {
+        "development": {
+            "developmentClient": true,
+            "distribution": "internal",
+            "env": {
+                "ENV": "development"
+            }
+        },
+        "preview": {
+            "distribution": "internal",
+            "android": {
+                "buildType": "apk"
+            },
+            "env": {
+                "ENV": "development"
+            }
+        },
+        "production": {
+            "android": {
+                "buildType": "app-bundle"
+            },
+            "ios": {
+                "resourceClass": "m-medium"
+            },
+            "env": {
+                "ENV": "production"
+            }
+        }
+    },
+    "submit": {
+        "production": {
+            "android": {
+                "serviceAccountKeyPath": "./google-services.json",
+                "track": "production"
+            },
+            "ios": {
+                "appleId": "your-apple-id@email.com",
+                "ascAppId": "your-app-store-connect-app-id"
+            }
+        }
+    }
+}
