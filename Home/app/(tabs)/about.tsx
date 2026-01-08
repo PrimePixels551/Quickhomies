@@ -1,11 +1,13 @@
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, RefreshControl, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/Colors';
+import { useRouter } from 'expo-router';
 
 export default function AboutScreen() {
+    const router = useRouter();
     const features = [
         { icon: 'shield-checkmark-outline', title: 'Verified Professionals', description: 'All our service providers are thoroughly verified' },
         { icon: 'flash-outline', title: 'Quick Service', description: 'Get help within hours, not days' },
@@ -32,6 +34,12 @@ export default function AboutScreen() {
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>About Us</Text>
+                <TouchableOpacity
+                    style={styles.profileButton}
+                    onPress={() => router.push('/profile')}
+                >
+                    <Ionicons name="person" size={20} color={Colors.secondary} />
+                </TouchableOpacity>
             </View>
 
             <ScrollView
@@ -124,12 +132,23 @@ const styles = StyleSheet.create({
         backgroundColor: Colors.primary,
         borderBottomLeftRadius: 20,
         borderBottomRightRadius: 20,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
     },
     headerTitle: {
         fontSize: 24,
         fontWeight: 'bold',
         color: Colors.secondary,
         textAlign: 'center',
+    },
+    profileButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     content: {
         padding: 20,

@@ -5,10 +5,10 @@ const bcrypt = require('bcryptjs');
 const userSchema = mongoose.Schema(
     {
         name: { type: String, required: true },
-        email: { type: String, required: false  },
+        email: { type: String, required: false },
         password: { type: String, required: true },
         phone: { type: String, required: true, unique: true },
-        address: { type: String ,required: true,},
+        address: { type: String, required: true, },
         role: {
             type: String,
             enum: ['user', 'professional', 'admin'],
@@ -21,6 +21,7 @@ const userSchema = mongoose.Schema(
         },
         // Only for professionals
         idProof: { type: String },
+        profileImage: { type: String },
         serviceCategory: { type: String },
         experience: { type: Number },
         isAvailable: { type: Boolean, default: true },

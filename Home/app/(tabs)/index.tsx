@@ -151,9 +151,14 @@ export default function HomeScreen() {
                                     <Text style={styles.authButtonText}>Login</Text>
                                 </TouchableOpacity>
                             ) : (
-                                <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-                                    <Ionicons name="log-out-outline" size={22} color={COLORS.white} />
-                                </TouchableOpacity>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                                    <TouchableOpacity
+                                        style={styles.profileButton}
+                                        onPress={() => router.push('/profile')}
+                                    >
+                                        <Ionicons name="person" size={20} color={COLORS.white} />
+                                    </TouchableOpacity>
+                                </View>
                             )}
                         </View>
                     </View>
@@ -429,6 +434,16 @@ const styles = StyleSheet.create({
         letterSpacing: 0.3,
     },
     logoutButton: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: 'rgba(255,255,255,0.15)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.2)',
+    },
+    profileButton: {
         width: 44,
         height: 44,
         borderRadius: 22,

@@ -13,23 +13,30 @@ import { authAPI, uploadAPI } from '../../services/api';
 export default function SignupScreen() {
     const router = useRouter();
     const [name, setName] = useState('');
-    const [email, setEmail] = useState('');
+    // Email removed as per requirement
     const [phone, setPhone] = useState('');
     const [address, setAddress] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [role, setRole] = useState<'user' | 'professional'>('user');
     const [serviceCategory, setServiceCategory] = useState('');
+    const [experience, setExperience] = useState('');
     const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+
+    // Image states
     const [idProofImage, setIdProofImage] = useState<string | null>(null);
     const [idProofUrl, setIdProofUrl] = useState<string>('');
+
+    const [profileImage, setProfileImage] = useState<string | null>(null);
+    const [profileImageUrl, setProfileImageUrl] = useState<string>('');
+
     const [uploading, setUploading] = useState(false);
 
-    const pickImage = async () => {
+    const pickImage = async (type: 'id' | 'profile') => {
         // Request permission
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (status !== 'granted') {
-            Alert.alert('Permission Required', 'Please allow access to your photos to upload ID proof.');
+            Alert.alert('Permission Required', 'Please allow access to your photos to upload image.');
             return;
         }
 
@@ -38,31 +45,16 @@ export default function SignupScreen() {
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
             allowsEditing: true,
             aspect: [4, 3],
-            quality: 0.7,
+            quality: 0.5,
             base64: true,
         });
 
         if (!result.canceled && result.assets[0].base64) {
-            const base64Image = `data:image/jpeg;base64,${result.assets[0].base64}`;
-            setIdProofImage(result.assets[0].uri);
-
-            // Upload to Cloudinary
-            setUploading(true);
-            try {
-                const response = await uploadAPI.uploadImage(base64Image);
-                setIdProofUrl(response.data.url);
-                Alert.alert('Success', 'ID proof uploaded successfully!');
-            } catch (error) {
-                console.error('Upload error:', error);
-                Alert.alert('Upload Failed', 'Failed to upload ID proof. Please try again.');
-                setIdProofImage(null);
-            } finally {
-                setUploading(false);
-            }
+            handleImageUpload(result.assets[0].uri, result.assets[0].base64, type);
         }
     };
 
-    const takePhoto = async () => {
+    const takePhoto = async (type: 'id' | 'profile') => {
         // Request camera permission
         const { status } = await ImagePicker.requestCameraPermissionsAsync();
         if (status !== 'granted') {
@@ -74,27 +66,44 @@ export default function SignupScreen() {
         const result = await ImagePicker.launchCameraAsync({
             allowsEditing: true,
             aspect: [4, 3],
-            quality: 0.7,
+            quality: 0.5,
             base64: true,
         });
 
         if (!result.canceled && result.assets[0].base64) {
-            const base64Image = `data:image/jpeg;base64,${result.assets[0].base64}`;
-            setIdProofImage(result.assets[0].uri);
+            handleImageUpload(result.assets[0].uri, result.assets[0].base64, type);
+        }
+    };
 
-            // Upload to Cloudinary
-            setUploading(true);
-            try {
-                const response = await uploadAPI.uploadImage(base64Image);
+    const handleImageUpload = async (uri: string, base64: string | null | undefined, type: 'id' | 'profile') => {
+        if (!base64) return;
+
+        const base64Image = `data:image/jpeg;base64,${base64}`;
+
+        if (type === 'id') {
+            setIdProofImage(uri);
+        } else {
+            setProfileImage(uri);
+        }
+
+        // Upload to Cloudinary
+        setUploading(true);
+        try {
+            const response = await uploadAPI.uploadImage(base64Image);
+            if (type === 'id') {
                 setIdProofUrl(response.data.url);
                 Alert.alert('Success', 'ID proof uploaded successfully!');
-            } catch (error) {
-                console.error('Upload error:', error);
-                Alert.alert('Upload Failed', 'Failed to upload ID proof. Please try again.');
-                setIdProofImage(null);
-            } finally {
-                setUploading(false);
+            } else {
+                setProfileImageUrl(response.data.url);
+                Alert.alert('Success', 'Profile photo uploaded successfully!');
             }
+        } catch (error) {
+            console.error('Upload error:', error);
+            Alert.alert('Upload Failed', 'Failed to upload image. Please try again.');
+            if (type === 'id') setIdProofImage(null);
+            else setProfileImage(null);
+        } finally {
+            setUploading(false);
         }
     };
 
@@ -104,15 +113,26 @@ export default function SignupScreen() {
             return;
         }
 
+        if (role === 'professional' && !profileImageUrl) {
+            Alert.alert('Profile Photo Required', 'Please upload your profile photo.');
+            return;
+        }
+
         try {
             const payload = {
                 name,
-                email,
+                // Email removed
                 phone,
                 address,
                 password,
                 role,
-                ...(role === 'professional' && { serviceCategory, idProof: idProofUrl, isAvailable: true })
+                ...(role === 'professional' && {
+                    serviceCategory,
+                    idProof: idProofUrl,
+                    isAvailable: true,
+                    experience: parseInt(experience) || 0,
+                    profileImage: profileImageUrl,
+                })
             };
             const { data } = await authAPI.register(payload);
             await AsyncStorage.setItem('user', JSON.stringify(data));
@@ -162,6 +182,24 @@ export default function SignupScreen() {
                     </View>
 
                     <View style={styles.formContainer}>
+                        {/* Profile Image Upload */}
+                        <View style={{ alignItems: 'center', marginBottom: 20 }}>
+                            <TouchableOpacity onPress={() => pickImage('profile')}>
+                                {profileImage ? (
+                                    <View style={{ position: 'relative' }}>
+                                        <Image source={{ uri: profileImage }} style={{ width: 100, height: 100, borderRadius: 50 }} />
+                                        <View style={{ position: 'absolute', bottom: 0, right: 0, backgroundColor: Colors.primary, borderRadius: 15, padding: 4 }}>
+                                            <Ionicons name="camera" size={14} color='#fff' />
+                                        </View>
+                                    </View>
+                                ) : (
+                                    <View style={{ width: 100, height: 100, borderRadius: 50, backgroundColor: Colors.gray, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: Colors.border }}>
+                                        <Ionicons name="camera-outline" size={30} color={Colors.textLight} />
+                                        <Text style={{ fontSize: 12, color: Colors.textLight, marginTop: 4 }}>Add Photo</Text>
+                                    </View>
+                                )}
+                            </TouchableOpacity>
+                        </View>
 
                         <View style={styles.inputWrapper}>
                             <Ionicons name="person-outline" size={20} color={Colors.textLight} style={styles.inputIcon} />
@@ -174,18 +212,7 @@ export default function SignupScreen() {
                             />
                         </View>
 
-                        <View style={styles.inputWrapper}>
-                            <Ionicons name="mail-outline" size={20} color={Colors.textLight} style={styles.inputIcon} />
-                            <TextInput
-                                style={styles.input}
-                                placeholder="Email Address"
-                                placeholderTextColor={Colors.textLight}
-                                keyboardType="email-address"
-                                autoCapitalize="none"
-                                value={email}
-                                onChangeText={setEmail}
-                            />
-                        </View>
+
 
                         <View style={styles.inputWrapper}>
                             <Ionicons name="call-outline" size={20} color={Colors.textLight} style={styles.inputIcon} />
@@ -212,6 +239,17 @@ export default function SignupScreen() {
 
                         {role === 'professional' && (
                             <View>
+                                <View style={styles.inputWrapper}>
+                                    <Ionicons name="time-outline" size={20} color={Colors.textLight} style={styles.inputIcon} />
+                                    <TextInput
+                                        style={styles.input}
+                                        placeholder="Experience (Years)"
+                                        placeholderTextColor={Colors.textLight}
+                                        keyboardType="numeric"
+                                        value={experience}
+                                        onChangeText={setExperience}
+                                    />
+                                </View>
                                 <TouchableOpacity
                                     style={styles.inputWrapper}
                                     onPress={() => setShowCategoryPicker(!showCategoryPicker)}
@@ -276,11 +314,11 @@ export default function SignupScreen() {
                                     </View>
                                 ) : (
                                     <View style={styles.uploadButtons}>
-                                        <TouchableOpacity style={styles.uploadBtn} onPress={pickImage}>
+                                        <TouchableOpacity style={styles.uploadBtn} onPress={() => pickImage('id')}>
                                             <Ionicons name="images-outline" size={24} color={Colors.primary} />
                                             <Text style={styles.uploadBtnText}>Gallery</Text>
                                         </TouchableOpacity>
-                                        <TouchableOpacity style={styles.uploadBtn} onPress={takePhoto}>
+                                        <TouchableOpacity style={styles.uploadBtn} onPress={() => takePhoto('id')}>
                                             <Ionicons name="camera-outline" size={24} color={Colors.primary} />
                                             <Text style={styles.uploadBtnText}>Camera</Text>
                                         </TouchableOpacity>

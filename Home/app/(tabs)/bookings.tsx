@@ -182,8 +182,16 @@ export default function BookingsScreen() {
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
-                <Text style={styles.headerTitle}>My Bookings</Text>
-                <Text style={styles.headerSubtitle}>{orders.length} order(s)</Text>
+                <View>
+                    <Text style={styles.headerTitle}>My Bookings</Text>
+                    <Text style={styles.headerSubtitle}>{orders.length} order(s)</Text>
+                </View>
+                <TouchableOpacity
+                    style={styles.profileButton}
+                    onPress={() => router.push('/profile')}
+                >
+                    <Ionicons name="person" size={20} color={Colors.secondary} />
+                </TouchableOpacity>
             </View>
 
             <ScrollView
@@ -366,6 +374,9 @@ const styles = StyleSheet.create({
         backgroundColor: Colors.primary,
         borderBottomLeftRadius: 24,
         borderBottomRightRadius: 24,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
     },
     headerTitle: {
         fontSize: 24,
@@ -376,6 +387,14 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: Colors.accent,
         marginTop: 4,
+    },
+    profileButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     content: {
         padding: 16,

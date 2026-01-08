@@ -200,7 +200,22 @@ export default function PartnerDashboardScreen() {
 
                 {/* Header & Status Switch */}
                 <View style={styles.header}>
-                    <Text style={styles.headerTitle}>Partner Dashboard</Text>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
+                        <Text style={styles.headerTitle}>Partner Dashboard</Text>
+                        <TouchableOpacity
+                            style={{
+                                width: 40,
+                                height: 40,
+                                borderRadius: 20,
+                                backgroundColor: 'rgba(255,255,255,0.2)',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}
+                            onPress={() => router.push('/profile')}
+                        >
+                            <Ionicons name="person" size={20} color={Colors.secondary} />
+                        </TouchableOpacity>
+                    </View>
                     <View style={styles.statusContainer}>
                         <Text style={[styles.statusText, isOnline ? styles.textOnline : styles.textOffline]}>
                             {isOnline ? 'You are Online' : 'You are Offline'}

@@ -1,12 +1,12 @@
 
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal, TextInput, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal, TextInput, RefreshControl, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '../../constants/Colors';
+import { Colors } from '../constants/Colors';
 import { useRouter, useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { userAPI } from '../../services/api';
+import { userAPI } from '../services/api';
 
 type ProfileMenuItemProps = {
     icon: keyof typeof Ionicons.glyphMap;
@@ -117,6 +117,15 @@ export default function ProfileScreen() {
 
     return (
         <SafeAreaView style={styles.container}>
+            {/* Back Button Header */}
+            <View style={styles.topHeader}>
+                <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+                    <Ionicons name="arrow-back" size={24} color={Colors.secondary} />
+                </TouchableOpacity>
+                <Text style={styles.topHeaderTitle}>Profile</Text>
+                <View style={{ width: 40 }} />
+            </View>
+
             <ScrollView
                 contentContainerStyle={styles.scrollContent}
                 refreshControl={
@@ -131,11 +140,16 @@ export default function ProfileScreen() {
 
                 {/* Header Profile Section */}
                 <View style={styles.header}>
-                    <Text style={styles.headerTitle}>My Profile</Text>
-
                     <View style={styles.profileCard}>
                         <TouchableOpacity style={styles.avatarContainer} onPress={openEditModal}>
-                            <Ionicons name="person" size={40} color={Colors.secondary} />
+                            {user?.profileImage ? (
+                                <Image
+                                    source={{ uri: user.profileImage }}
+                                    style={{ width: 76, height: 76, borderRadius: 38 }}
+                                />
+                            ) : (
+                                <Ionicons name="person" size={40} color={Colors.secondary} />
+                            )}
                             {user && (
                                 <View style={styles.editBadge}>
                                     <Ionicons name="pencil" size={12} color={Colors.secondary} />
@@ -294,24 +308,40 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: Colors.secondary,
+        backgroundColor: Colors.primary,
+    },
+    topHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        backgroundColor: Colors.primary,
+    },
+    backButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    topHeaderTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: Colors.secondary,
     },
     scrollContent: {
         paddingBottom: 40,
+        backgroundColor: Colors.secondary,
     },
     header: {
         backgroundColor: Colors.primary,
         alignItems: 'center',
-        paddingTop: 20,
+        paddingTop: 10,
         paddingBottom: 60,
         borderBottomLeftRadius: 30,
         borderBottomRightRadius: 30,
-    },
-    headerTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: Colors.secondary,
-        marginBottom: 20,
     },
     profileCard: {
         alignItems: 'center',

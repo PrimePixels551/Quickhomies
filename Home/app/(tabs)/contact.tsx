@@ -4,8 +4,10 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, Alert, R
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/Colors';
+import { useRouter } from 'expo-router';
 
 export default function ContactScreen() {
+    const router = useRouter();
     const contactInfo = {
         phone: '+91 9876543210',
         email: 'support@quickhomies.com',
@@ -59,8 +61,16 @@ export default function ContactScreen() {
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
-                <Text style={styles.headerTitle}>Contact Us</Text>
-                <Text style={styles.headerSubtitle}>We're here to help!</Text>
+                <View>
+                    <Text style={styles.headerTitle}>Contact Us</Text>
+                    <Text style={styles.headerSubtitle}>We're here to help!</Text>
+                </View>
+                <TouchableOpacity
+                    style={styles.profileButton}
+                    onPress={() => router.push('/profile')}
+                >
+                    <Ionicons name="person" size={20} color={Colors.secondary} />
+                </TouchableOpacity>
             </View>
 
             <ScrollView
@@ -158,6 +168,9 @@ const styles = StyleSheet.create({
         backgroundColor: Colors.primary,
         borderBottomLeftRadius: 20,
         borderBottomRightRadius: 20,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
     },
     headerTitle: {
         fontSize: 24,
@@ -169,6 +182,14 @@ const styles = StyleSheet.create({
         color: Colors.secondary,
         opacity: 0.8,
         marginTop: 4,
+    },
+    profileButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     content: {
         padding: 20,

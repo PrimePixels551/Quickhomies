@@ -24,6 +24,8 @@ const loginUser = async (req, res) => {
             address: user.address,
             role: user.role,
             token: generateToken(user._id),
+            profileImage: user.profileImage,
+            experience: user.experience,
         });
     } else {
         console.log('Login failed: Invalid credentials');
@@ -35,19 +37,28 @@ const loginUser = async (req, res) => {
 // @route   POST /api/auth/register
 // @access  Public
 const registerUser = async (req, res) => {
-    const { name, email, password, phone, role, serviceCategory, address, isAvailable, idProof } = req.body;
+    const { name, email, password, phone, role, serviceCategory, address, isAvailable, idProof, experience, profileImage } = req.body;
 
-    // Check if user exists by email OR phone
-    const userExists = await User.findOne({ $or: [{ email }, { phone }] });
+    // Check if user exists by phone (primary identifier)
+    const userExists = await User.findOne({ phone });
 
     if (userExists) {
-        res.status(400).json({ message: 'User already exists (email or phone used)' });
+        res.status(400).json({ message: 'User already exists with this phone number' });
         return;
+    }
+
+    // Only check email if it was provided
+    if (email) {
+        const emailExists = await User.findOne({ email });
+        if (emailExists) {
+            res.status(400).json({ message: 'User already exists with this email' });
+            return;
+        }
     }
 
     const user = await User.create({
         name,
-        email,
+        email: email || undefined, // Store undefined if empty string or null
         password,
         phone,
         address,
@@ -55,6 +66,8 @@ const registerUser = async (req, res) => {
         verificationStatus: role === 'professional' ? 'pending' : 'verified',
         serviceCategory, // optional, for professionals
         idProof, // optional, for professionals
+        experience, // optional, for professionals
+        profileImage, // optional, for professionals
         isAvailable, // optional
     });
 
@@ -67,6 +80,8 @@ const registerUser = async (req, res) => {
             address: user.address,
             role: user.role,
             token: generateToken(user._id),
+            profileImage: user.profileImage,
+            experience: user.experience,
         });
     } else {
         res.status(400).json({ message: 'Invalid user data' });
