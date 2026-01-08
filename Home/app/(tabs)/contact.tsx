@@ -1,6 +1,6 @@
 
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, Alert, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/Colors';
@@ -48,6 +48,14 @@ export default function ContactScreen() {
         </TouchableOpacity>
     );
 
+    const [refreshing, setRefreshing] = useState(false);
+
+    const onRefresh = () => {
+        setRefreshing(true);
+        // Simulate refresh for static content
+        setTimeout(() => setRefreshing(false), 500);
+    };
+
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
@@ -55,7 +63,17 @@ export default function ContactScreen() {
                 <Text style={styles.headerSubtitle}>We're here to help!</Text>
             </View>
 
-            <ScrollView contentContainerStyle={styles.content}>
+            <ScrollView
+                contentContainerStyle={styles.content}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        colors={[Colors.primary]}
+                        tintColor={Colors.primary}
+                    />
+                }
+            >
                 {/* Hero Section */}
                 <View style={styles.heroCard}>
                     <Ionicons name="headset-outline" size={50} color={Colors.primary} />
