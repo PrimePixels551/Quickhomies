@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Plus, Trash2, X, Wrench, Edit2 } from 'lucide-react';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
 const Services = () => {
     const [services, setServices] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -16,7 +18,7 @@ const Services = () => {
 
     const fetchServices = async () => {
         try {
-            const { data } = await axios.get('http://localhost:5000/api/services');
+            const { data } = await axios.get(`${API_URL}/services`);
             setServices(data);
             setLoading(false);
         } catch (err) {
@@ -28,7 +30,7 @@ const Services = () => {
     const handleDelete = async (id) => {
         if (window.confirm('Are you sure you want to delete this service?')) {
             try {
-                await axios.delete(`http://localhost:5000/api/services/${id}`);
+                await axios.delete(`${API_URL}/services/${id}`);
                 setServices(services.filter((service) => service._id !== id));
             } catch (err) {
                 alert('Failed to delete service');
@@ -57,10 +59,10 @@ const Services = () => {
             };
 
             if (editingService) {
-                const { data } = await axios.put(`http://localhost:5000/api/services/${editingService._id}`, payload);
+                const { data } = await axios.put(`${API_URL}/services/${editingService._id}`, payload);
                 setServices(services.map(s => s._id === editingService._id ? data : s));
             } else {
-                const { data } = await axios.post('http://localhost:5000/api/services', payload);
+                const { data } = await axios.post(`${API_URL}/services`, payload);
                 setServices([...services, data]);
             }
             closeModal();
