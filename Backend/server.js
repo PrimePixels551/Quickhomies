@@ -69,6 +69,10 @@ app.get('/health', (req, res) => {
     res.json({ status: 'healthy' });
 });
 
+app.get('/api/health', (req, res) => {
+    res.json({ status: 'healthy', timestamp: new Date().toISOString() });
+});
+
 // 404 handler
 app.use((req, res, next) => {
     res.status(404).json({ message: `Route ${req.originalUrl} not found` });

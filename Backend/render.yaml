@@ -1,0 +1,25 @@
+# Render.yaml - Auto-deploy configuration for QuickHomies Backend
+# https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: quickhomies-backend
+    runtime: node
+    region: singapore # or your preferred region
+    plan: free # Options: free, starter, standard, pro
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: MONGO_URI
+        sync: false # Set manually in Render dashboard
+      - key: JWT_SECRET
+        sync: false # Set manually in Render dashboard
+      - key: CLOUDINARY_URL
+        sync: false # Set manually in Render dashboard
+
+    healthCheckPath: /api/health
+    autoDeploy: true # Auto-deploy on git push
