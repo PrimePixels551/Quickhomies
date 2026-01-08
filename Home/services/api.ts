@@ -42,4 +42,12 @@ export const reviewAPI = {
     checkOrderReview: (orderId: string) => api.get(`/reviews/order/${orderId}`),
 };
 
+export const uploadAPI = {
+    uploadImage: (base64Image: string) => api.post('/upload/image', { image: base64Image }),
+};
+
+export const settingsAPI = {
+    get: (key: string) => api.get(`/settings/${key}`),
+};
+
 export default api;

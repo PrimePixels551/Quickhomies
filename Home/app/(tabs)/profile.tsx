@@ -1,6 +1,6 @@
 
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal, TextInput, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/Colors';
@@ -35,6 +35,7 @@ export default function ProfileScreen() {
         email: '',
     });
     const [isSaving, setIsSaving] = useState(false);
+    const [refreshing, setRefreshing] = useState(false);
 
     useFocusEffect(
         useCallback(() => {
@@ -108,9 +109,25 @@ export default function ProfileScreen() {
         }
     };
 
+    const onRefresh = async () => {
+        setRefreshing(true);
+        await loadUser();
+        setRefreshing(false);
+    };
+
     return (
         <SafeAreaView style={styles.container}>
-            <ScrollView contentContainerStyle={styles.scrollContent}>
+            <ScrollView
+                contentContainerStyle={styles.scrollContent}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        colors={[Colors.primary]}
+                        tintColor={Colors.primary}
+                    />
+                }
+            >
 
                 {/* Header Profile Section */}
                 <View style={styles.header}>

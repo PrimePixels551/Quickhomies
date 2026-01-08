@@ -83,7 +83,7 @@ const UsersPage = () => {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                        {users.map((user) => (
+                        {users.reverse().map((user) => (
                             <tr key={user._id} className="hover:bg-gray-50 transition-colors">
                                 <td className="px-6 py-4">
                                     <div className="flex items-center">

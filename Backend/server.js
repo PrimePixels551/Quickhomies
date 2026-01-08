@@ -3,7 +3,6 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
-const mongoSanitize = require('express-mongo-sanitize');
 const connectDB = require('./config/db');
 
 // Load env vars
@@ -21,7 +20,6 @@ if (process.env.NODE_ENV === 'production') {
 
 // Security middleware
 app.use(helmet()); // Set security HTTP headers
-app.use(mongoSanitize()); // Sanitize data to prevent NoSQL injection
 
 // Rate limiting
 const limiter = rateLimit({
@@ -54,6 +52,8 @@ app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/orders', require('./routes/orderRoutes'));
 app.use('/api/services', require('./routes/serviceRoutes'));
 app.use('/api/reviews', require('./routes/reviewRoutes'));
+app.use('/api/upload', require('./routes/uploadRoutes'));
+app.use('/api/settings', require('./routes/settingsRoutes'));
 
 // Health check endpoint
 app.get('/', (req, res) => {

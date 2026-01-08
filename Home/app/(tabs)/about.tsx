@@ -1,6 +1,6 @@
 
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Image } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, Image, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/Colors';
@@ -20,13 +20,31 @@ export default function AboutScreen() {
         { value: '4.8', label: 'App Rating' },
     ];
 
+    const [refreshing, setRefreshing] = useState(false);
+
+    const onRefresh = () => {
+        setRefreshing(true);
+        // Simulate refresh for static content
+        setTimeout(() => setRefreshing(false), 500);
+    };
+
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>About Us</Text>
             </View>
 
-            <ScrollView contentContainerStyle={styles.content}>
+            <ScrollView
+                contentContainerStyle={styles.content}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        colors={[Colors.primary]}
+                        tintColor={Colors.primary}
+                    />
+                }
+            >
                 {/* Hero Section */}
                 <View style={styles.heroSection}>
                     <View style={styles.logoContainer}>

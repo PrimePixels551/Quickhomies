@@ -1,13 +1,14 @@
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, KeyboardAvoidingView, Platform, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/Colors';
+import * as ImagePicker from 'expo-image-picker';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { authAPI } from '../../services/api';
+import { authAPI, uploadAPI } from '../../services/api';
 
 export default function SignupScreen() {
     const router = useRouter();
@@ -20,9 +21,89 @@ export default function SignupScreen() {
     const [role, setRole] = useState<'user' | 'professional'>('user');
     const [serviceCategory, setServiceCategory] = useState('');
     const [showCategoryPicker, setShowCategoryPicker] = useState(false);
-    const [idProof, setIdProof] = useState('');
+    const [idProofImage, setIdProofImage] = useState<string | null>(null);
+    const [idProofUrl, setIdProofUrl] = useState<string>('');
+    const [uploading, setUploading] = useState(false);
+
+    const pickImage = async () => {
+        // Request permission
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+            Alert.alert('Permission Required', 'Please allow access to your photos to upload ID proof.');
+            return;
+        }
+
+        // Pick image
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true,
+            aspect: [4, 3],
+            quality: 0.7,
+            base64: true,
+        });
+
+        if (!result.canceled && result.assets[0].base64) {
+            const base64Image = `data:image/jpeg;base64,${result.assets[0].base64}`;
+            setIdProofImage(result.assets[0].uri);
+
+            // Upload to Cloudinary
+            setUploading(true);
+            try {
+                const response = await uploadAPI.uploadImage(base64Image);
+                setIdProofUrl(response.data.url);
+                Alert.alert('Success', 'ID proof uploaded successfully!');
+            } catch (error) {
+                console.error('Upload error:', error);
+                Alert.alert('Upload Failed', 'Failed to upload ID proof. Please try again.');
+                setIdProofImage(null);
+            } finally {
+                setUploading(false);
+            }
+        }
+    };
+
+    const takePhoto = async () => {
+        // Request camera permission
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== 'granted') {
+            Alert.alert('Permission Required', 'Please allow camera access to take a photo.');
+            return;
+        }
+
+        // Take photo
+        const result = await ImagePicker.launchCameraAsync({
+            allowsEditing: true,
+            aspect: [4, 3],
+            quality: 0.7,
+            base64: true,
+        });
+
+        if (!result.canceled && result.assets[0].base64) {
+            const base64Image = `data:image/jpeg;base64,${result.assets[0].base64}`;
+            setIdProofImage(result.assets[0].uri);
+
+            // Upload to Cloudinary
+            setUploading(true);
+            try {
+                const response = await uploadAPI.uploadImage(base64Image);
+                setIdProofUrl(response.data.url);
+                Alert.alert('Success', 'ID proof uploaded successfully!');
+            } catch (error) {
+                console.error('Upload error:', error);
+                Alert.alert('Upload Failed', 'Failed to upload ID proof. Please try again.');
+                setIdProofImage(null);
+            } finally {
+                setUploading(false);
+            }
+        }
+    };
 
     const handleSignup = async () => {
+        if (role === 'professional' && !idProofUrl) {
+            Alert.alert('ID Proof Required', 'Please upload your government ID proof.');
+            return;
+        }
+
         try {
             const payload = {
                 name,
@@ -31,7 +112,7 @@ export default function SignupScreen() {
                 address,
                 password,
                 role,
-                ...(role === 'professional' && { serviceCategory, idProof, isAvailable: true })
+                ...(role === 'professional' && { serviceCategory, idProof: idProofUrl, isAvailable: true })
             };
             const { data } = await authAPI.register(payload);
             await AsyncStorage.setItem('user', JSON.stringify(data));
@@ -161,16 +242,50 @@ export default function SignupScreen() {
                             </View>
                         )}
 
+                        {/* ID Proof Image Upload */}
                         {role === 'professional' && (
-                            <View style={styles.inputWrapper}>
-                                <Ionicons name="card-outline" size={20} color={Colors.textLight} style={styles.inputIcon} />
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder="Govt ID Number (Aadhar/PAN)"
-                                    placeholderTextColor={Colors.textLight}
-                                    value={idProof}
-                                    onChangeText={setIdProof}
-                                />
+                            <View style={styles.idProofSection}>
+                                <Text style={styles.idProofLabel}>Government ID Proof (Aadhar/PAN)</Text>
+
+                                {idProofImage ? (
+                                    <View style={styles.imagePreviewContainer}>
+                                        <Image source={{ uri: idProofImage }} style={styles.imagePreview} />
+                                        {uploading && (
+                                            <View style={styles.uploadingOverlay}>
+                                                <ActivityIndicator size="large" color={Colors.primary} />
+                                                <Text style={styles.uploadingText}>Uploading...</Text>
+                                            </View>
+                                        )}
+                                        {!uploading && (
+                                            <TouchableOpacity
+                                                style={styles.removeImageBtn}
+                                                onPress={() => {
+                                                    setIdProofImage(null);
+                                                    setIdProofUrl('');
+                                                }}
+                                            >
+                                                <Ionicons name="close-circle" size={28} color={Colors.error} />
+                                            </TouchableOpacity>
+                                        )}
+                                        {idProofUrl && !uploading && (
+                                            <View style={styles.uploadedBadge}>
+                                                <Ionicons name="checkmark-circle" size={16} color="#10B981" />
+                                                <Text style={styles.uploadedText}>Uploaded</Text>
+                                            </View>
+                                        )}
+                                    </View>
+                                ) : (
+                                    <View style={styles.uploadButtons}>
+                                        <TouchableOpacity style={styles.uploadBtn} onPress={pickImage}>
+                                            <Ionicons name="images-outline" size={24} color={Colors.primary} />
+                                            <Text style={styles.uploadBtnText}>Gallery</Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity style={styles.uploadBtn} onPress={takePhoto}>
+                                            <Ionicons name="camera-outline" size={24} color={Colors.primary} />
+                                            <Text style={styles.uploadBtnText}>Camera</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                )}
                             </View>
                         )}
 
@@ -189,7 +304,11 @@ export default function SignupScreen() {
                             </TouchableOpacity>
                         </View>
 
-                        <TouchableOpacity style={styles.signupButton} onPress={handleSignup}>
+                        <TouchableOpacity
+                            style={[styles.signupButton, uploading && styles.signupButtonDisabled]}
+                            onPress={handleSignup}
+                            disabled={uploading}
+                        >
                             <Text style={styles.signupButtonText}>Sign Up</Text>
                         </TouchableOpacity>
 
@@ -274,6 +393,9 @@ const styles = StyleSheet.create({
         shadowRadius: 8,
         elevation: 5,
     },
+    signupButtonDisabled: {
+        opacity: 0.6,
+    },
     signupButtonText: {
         color: Colors.secondary,
         fontSize: 18,
@@ -335,6 +457,82 @@ const styles = StyleSheet.create({
     dropdownItemText: {
         fontSize: 16,
         color: Colors.text,
+    },
+    // ID Proof Styles
+    idProofSection: {
+        marginBottom: 15,
+    },
+    idProofLabel: {
+        fontSize: 14,
+        color: Colors.text,
+        fontWeight: '600',
+        marginBottom: 10,
+    },
+    uploadButtons: {
+        flexDirection: 'row',
+        gap: 12,
+    },
+    uploadBtn: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        backgroundColor: Colors.gray,
+        borderRadius: 12,
+        paddingVertical: 16,
+        borderWidth: 2,
+        borderColor: Colors.primary,
+        borderStyle: 'dashed',
+    },
+    uploadBtnText: {
+        fontSize: 14,
+        color: Colors.primary,
+        fontWeight: '600',
+    },
+    imagePreviewContainer: {
+        position: 'relative',
+        borderRadius: 12,
+        overflow: 'hidden',
+    },
+    imagePreview: {
+        width: '100%',
+        height: 180,
+        borderRadius: 12,
+    },
+    uploadingOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(255,255,255,0.8)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    uploadingText: {
+        marginTop: 8,
+        fontSize: 14,
+        color: Colors.primary,
+        fontWeight: '600',
+    },
+    removeImageBtn: {
+        position: 'absolute',
+        top: 8,
+        right: 8,
+    },
+    uploadedBadge: {
+        position: 'absolute',
+        bottom: 8,
+        left: 8,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        backgroundColor: '#10B98120',
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 20,
+    },
+    uploadedText: {
+        fontSize: 12,
+        color: '#10B981',
+        fontWeight: '600',
     },
 });
 

@@ -7,6 +7,7 @@ import ProfessionalsPage from './pages/Professionals';
 import BookingsPage from './pages/Bookings';
 import ServicesPage from './pages/Services';
 import ReviewsPage from './pages/Reviews';
+import SettingsPage from './pages/Settings';
 
 function App() {
   return (
@@ -19,7 +20,7 @@ function App() {
           <Route path="services" element={<ServicesPage />} />
           <Route path="bookings" element={<BookingsPage />} />
           <Route path="reviews" element={<ReviewsPage />} />
-          <Route path="settings" element={<div className="p-4">Settings Page (Coming Soon)</div>} />
+          <Route path="settings" element={<SettingsPage />} />
         </Route>
       </Routes>
     </Router>

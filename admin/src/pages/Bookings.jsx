@@ -55,6 +55,7 @@ const BookingsPage = () => {
         total: orders.length,
         pending: orders.filter(o => o.status === 'Pending').length,
         accepted: orders.filter(o => o.status === 'Accepted').length,
+        paymentPending: orders.filter(o => o.status === 'PaymentPending').length,
         completed: orders.filter(o => o.status === 'Completed').length,
     };
 
@@ -63,7 +64,7 @@ const BookingsPage = () => {
     return (
         <div className="space-y-6">
             {/* Stats */}
-            <div className="grid grid-cols-4 gap-4">
+            <div className="grid grid-cols-5 gap-4">
                 <div className="bg-white rounded-xl p-4 shadow-sm border cursor-pointer hover:border-indigo-300" onClick={() => setFilter('all')}>
                     <p className="text-gray-500 text-sm">Total Bookings</p>
                     <p className="text-2xl font-bold text-gray-800">{stats.total}</p>
@@ -75,6 +76,10 @@ const BookingsPage = () => {
                 <div className="bg-blue-50 rounded-xl p-4 shadow-sm border border-blue-200 cursor-pointer hover:border-blue-400" onClick={() => setFilter('Accepted')}>
                     <p className="text-blue-600 text-sm">Accepted</p>
                     <p className="text-2xl font-bold text-blue-700">{stats.accepted}</p>
+                </div>
+                <div className="bg-orange-50 rounded-xl p-4 shadow-sm border border-orange-200 cursor-pointer hover:border-orange-400" onClick={() => setFilter('PaymentPending')}>
+                    <p className="text-orange-600 text-sm">Payment Pending</p>
+                    <p className="text-2xl font-bold text-orange-700">{stats.paymentPending}</p>
                 </div>
                 <div className="bg-green-50 rounded-xl p-4 shadow-sm border border-green-200 cursor-pointer hover:border-green-400" onClick={() => setFilter('Completed')}>
                     <p className="text-green-600 text-sm">Completed</p>
@@ -123,10 +128,11 @@ const BookingsPage = () => {
                                     <td className="px-6 py-4 font-bold text-indigo-600">₹{order.price || 0}</td>
                                     <td className="px-6 py-4">
                                         <span className={`px-2 py-1 text-xs font-semibold rounded-full ${order.status === 'Completed' ? 'bg-green-100 text-green-800' :
-                                                order.status === 'Accepted' ? 'bg-blue-100 text-blue-800' :
+                                            order.status === 'Accepted' ? 'bg-blue-100 text-blue-800' :
+                                                order.status === 'PaymentPending' ? 'bg-orange-100 text-orange-800' :
                                                     order.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'
                                             }`}>
-                                            {order.status}
+                                            {order.status === 'PaymentPending' ? 'Payment Pending' : order.status}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 text-gray-500 text-sm">{new Date(order.createdAt).toLocaleDateString()}</td>
@@ -148,13 +154,18 @@ const BookingsPage = () => {
                                                     <CheckCircle className="w-4 h-4" />
                                                 </button>
                                             )}
-                                            {order.status === 'Accepted' && (
+                                            {order.status === 'PaymentPending' && (
                                                 <button
-                                                    onClick={() => handleStatusUpdate(order._id, 'Completed')}
-                                                    className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                                                    title="Mark Complete"
+                                                    onClick={() => {
+                                                        if (window.confirm(`Approve payment of ₹${order.price} for this order?`)) {
+                                                            handleStatusUpdate(order._id, 'Completed');
+                                                        }
+                                                    }}
+                                                    className="px-3 py-1.5 text-xs font-semibold text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors flex items-center gap-1"
+                                                    title="Approve Payment"
                                                 >
-                                                    <CheckCircle className="w-4 h-4" />
+                                                    <CheckCircle className="w-3.5 h-3.5" />
+                                                    Approve ₹{order.price}
                                                 </button>
                                             )}
                                             <button
@@ -191,10 +202,11 @@ const BookingsPage = () => {
                         <div className="space-y-4">
                             <div className="flex justify-between items-center">
                                 <span className={`px-3 py-1 text-sm font-semibold rounded-full ${selectedOrder.status === 'Completed' ? 'bg-green-100 text-green-800' :
-                                        selectedOrder.status === 'Accepted' ? 'bg-blue-100 text-blue-800' :
+                                    selectedOrder.status === 'Accepted' ? 'bg-blue-100 text-blue-800' :
+                                        selectedOrder.status === 'PaymentPending' ? 'bg-orange-100 text-orange-800' :
                                             'bg-yellow-100 text-yellow-800'
                                     }`}>
-                                    {selectedOrder.status}
+                                    {selectedOrder.status === 'PaymentPending' ? 'Payment Pending' : selectedOrder.status}
                                 </span>
                                 <span className="text-2xl font-bold text-indigo-600">₹{selectedOrder.price || 0}</span>
                             </div>
@@ -227,6 +239,29 @@ const BookingsPage = () => {
                             <div className="border-t pt-4 text-sm text-gray-500">
                                 <p>Created: {new Date(selectedOrder.createdAt).toLocaleString('en-IN')}</p>
                             </div>
+
+                            {/* Approve Payment Section for PaymentPending */}
+                            {selectedOrder.status === 'PaymentPending' && (
+                                <div className="border-t pt-4">
+                                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                                        <h4 className="font-semibold text-orange-800 mb-2">Payment Approval Required</h4>
+                                        <p className="text-sm text-orange-700 mb-4">
+                                            The partner has collected ₹{selectedOrder.price} from the customer.
+                                            Please verify and approve this payment to complete the order.
+                                        </p>
+                                        <button
+                                            onClick={() => {
+                                                handleStatusUpdate(selectedOrder._id, 'Completed');
+                                                setSelectedOrder(null);
+                                            }}
+                                            className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
+                                        >
+                                            <CheckCircle className="w-5 h-5" />
+                                            Approve Payment & Complete Order
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

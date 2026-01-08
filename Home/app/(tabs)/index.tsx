@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, Image, TouchableOpacity, Dimensions, Animated } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TextInput, Image, TouchableOpacity, Dimensions, Animated, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/Colors';
@@ -30,6 +30,8 @@ export default function HomeScreen() {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [services, setServices] = useState<any[]>([]);
     const [userName, setUserName] = useState('');
+    const [isProfessional, setIsProfessional] = useState(false);
+    const [refreshing, setRefreshing] = useState(false);
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const slideAnim = useRef(new Animated.Value(30)).current;
 
@@ -77,9 +79,11 @@ export default function HomeScreen() {
             const user = JSON.parse(userData);
             setIsAuthenticated(true);
             setUserName(user.name || '');
+            setIsProfessional(user.role === 'professional');
         } else {
             setIsAuthenticated(false);
             setUserName('');
+            setIsProfessional(false);
         }
     };
 
@@ -94,9 +98,26 @@ export default function HomeScreen() {
         router.push('/auth/login');
     };
 
+    const onRefresh = async () => {
+        setRefreshing(true);
+        await Promise.all([fetchServices(), checkAuth()]);
+        setRefreshing(false);
+    };
+
     return (
         <SafeAreaView style={styles.container}>
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+            <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.scrollContent}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        colors={['#0F172A']}
+                        tintColor="#0F172A"
+                    />
+                }
+            >
 
                 {/* Header with Navy Gradient */}
                 <LinearGradient
@@ -194,55 +215,57 @@ export default function HomeScreen() {
                     </LinearGradient>
                 </Animated.View>
 
-                {/* Services Grid - Clean & Premium */}
-                <View style={styles.servicesSection}>
-                    <View style={styles.sectionHeader}>
-                        <View>
-                            <Text style={styles.sectionTitle}>Our Services</Text>
-                            <Text style={styles.sectionSubtitle}>Choose from our wide range</Text>
+                {/* Services Grid - Clean & Premium - Only for Users */}
+                {!isProfessional && (
+                    <View style={styles.servicesSection}>
+                        <View style={styles.sectionHeader}>
+                            <View>
+                                <Text style={styles.sectionTitle}>Our Services</Text>
+                                <Text style={styles.sectionSubtitle}>Choose from our wide range</Text>
+                            </View>
+                        </View>
+                        <View style={styles.servicesGrid}>
+                            {services.map((service, index) => {
+                                const colorSchemes = [
+                                    { gradient: [COLORS.blue, COLORS.lightBlue] as const, border: COLORS.blue },
+                                    { gradient: [COLORS.navy, COLORS.navyLight] as const, border: COLORS.navy },
+                                    { gradient: [COLORS.lightBlue, COLORS.skyBlue] as const, border: COLORS.lightBlue },
+                                    { gradient: [COLORS.navyLight, COLORS.navy] as const, border: COLORS.navyLight },
+                                ];
+                                const colorScheme = colorSchemes[index % 4];
+
+                                return (
+                                    <TouchableOpacity
+                                        key={service.id}
+                                        style={[styles.serviceCard, { borderColor: colorScheme.border }]}
+                                        activeOpacity={0.8}
+                                        onPress={() => router.push({
+                                            pathname: '/service/[id]',
+                                            params: { id: service.id, name: service.name, minPrice: service.minPrice, maxPrice: service.maxPrice }
+                                        })}
+                                    >
+                                        <LinearGradient
+                                            colors={colorScheme.gradient}
+                                            start={{ x: 0, y: 0 }}
+                                            end={{ x: 1, y: 1 }}
+                                            style={styles.serviceIconContainer}
+                                        >
+                                            <Ionicons name={service.icon as any} size={28} color={COLORS.white} />
+                                        </LinearGradient>
+                                        <Text style={styles.serviceName}>{service.name}</Text>
+                                        {(service.minPrice > 0 || service.maxPrice > 0) && (
+                                            <View style={styles.priceContainer}>
+                                                <Text style={styles.servicePriceHint}>
+                                                    ₹{service.minPrice}-{service.maxPrice}
+                                                </Text>
+                                            </View>
+                                        )}
+                                    </TouchableOpacity>
+                                );
+                            })}
                         </View>
                     </View>
-                    <View style={styles.servicesGrid}>
-                        {services.map((service, index) => {
-                            const colorSchemes = [
-                                { gradient: [COLORS.blue, COLORS.lightBlue] as const, border: COLORS.blue },
-                                { gradient: [COLORS.navy, COLORS.navyLight] as const, border: COLORS.navy },
-                                { gradient: [COLORS.lightBlue, COLORS.skyBlue] as const, border: COLORS.lightBlue },
-                                { gradient: [COLORS.navyLight, COLORS.navy] as const, border: COLORS.navyLight },
-                            ];
-                            const colorScheme = colorSchemes[index % 4];
-
-                            return (
-                                <TouchableOpacity
-                                    key={service.id}
-                                    style={[styles.serviceCard, { borderColor: colorScheme.border }]}
-                                    activeOpacity={0.8}
-                                    onPress={() => router.push({
-                                        pathname: '/service/[id]',
-                                        params: { id: service.id, name: service.name, minPrice: service.minPrice, maxPrice: service.maxPrice }
-                                    })}
-                                >
-                                    <LinearGradient
-                                        colors={colorScheme.gradient}
-                                        start={{ x: 0, y: 0 }}
-                                        end={{ x: 1, y: 1 }}
-                                        style={styles.serviceIconContainer}
-                                    >
-                                        <Ionicons name={service.icon as any} size={28} color={COLORS.white} />
-                                    </LinearGradient>
-                                    <Text style={styles.serviceName}>{service.name}</Text>
-                                    {(service.minPrice > 0 || service.maxPrice > 0) && (
-                                        <View style={styles.priceContainer}>
-                                            <Text style={styles.servicePriceHint}>
-                                                ₹{service.minPrice}-{service.maxPrice}
-                                            </Text>
-                                        </View>
-                                    )}
-                                </TouchableOpacity>
-                            );
-                        })}
-                    </View>
-                </View>
+                )}
 
                 {/* Features Section - Premium Design */}
                 <View style={styles.featuresSection}>
@@ -557,8 +580,8 @@ const styles = StyleSheet.create({
     serviceCard: {
         width: (width - 56) / 3,
         backgroundColor: COLORS.white,
-        borderRadius: 24,
-        padding: 18,
+        borderRadius: 18,
+        padding: 12,
         alignItems: 'center',
         borderWidth: 1.5,
         shadowColor: COLORS.navy,
@@ -568,12 +591,12 @@ const styles = StyleSheet.create({
         elevation: 4,
     },
     serviceIconContainer: {
-        width: 64,
-        height: 64,
-        borderRadius: 20,
+        width: 52,
+        height: 52,
+        borderRadius: 16,
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: 14,
+        marginBottom: 10,
         shadowColor: COLORS.navy,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.15,

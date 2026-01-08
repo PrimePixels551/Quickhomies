@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity, Alert, Modal, Linking, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity, Alert, Modal, Linking, TextInput, Image, ActivityIndicator, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors } from '../../constants/Colors';
-import { orderAPI, userAPI } from '../../services/api';
+import { orderAPI, userAPI, settingsAPI } from '../../services/api';
 
 export default function PartnerDashboardScreen() {
     const router = useRouter();
@@ -16,6 +16,10 @@ export default function PartnerDashboardScreen() {
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [payingOrderId, setPayingOrderId] = useState<string | null>(null);
     const [paymentAmount, setPaymentAmount] = useState('');
+    const [qrModalVisible, setQrModalVisible] = useState(false);
+    const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
+    const [loadingQr, setLoadingQr] = useState(false);
+    const [refreshing, setRefreshing] = useState(false);
 
     const openOrderDetails = (order: any) => {
         setSelectedOrder(order);
@@ -33,6 +37,7 @@ export default function PartnerDashboardScreen() {
 
     useEffect(() => {
         loadUserAndOrders();
+        fetchQrCode();
     }, []);
 
     const loadUserAndOrders = async () => {
@@ -76,6 +81,21 @@ export default function PartnerDashboardScreen() {
         } catch (error) {
             console.error('Failed to fetch orders', error);
         }
+    };
+
+    const fetchQrCode = async () => {
+        try {
+            const response = await settingsAPI.get('partner_qr_code');
+            setQrCodeUrl(response.data.value);
+        } catch (error) {
+            console.log('No QR code set yet');
+        }
+    };
+
+    const onRefresh = async () => {
+        setRefreshing(true);
+        await Promise.all([loadUserAndOrders(), fetchQrCode()]);
+        setRefreshing(false);
     };
 
     const toggleSwitch = async () => {
@@ -128,21 +148,21 @@ export default function PartnerDashboardScreen() {
         }
 
         Alert.alert(
-            'Confirm Cash Payment',
-            `Receive ₹${paymentAmount} in cash?`,
+            'Submit Payment for Approval',
+            `Submit ₹${paymentAmount} payment for admin approval?`,
             [
                 { text: 'Cancel', style: 'cancel' },
                 {
-                    text: 'Confirm',
+                    text: 'Submit',
                     onPress: async () => {
                         try {
-                            await orderAPI.updateStatus(orderId, { status: 'Completed', price: Number(paymentAmount) });
-                            setOrders(orders.map(o => o._id === orderId ? { ...o, status: 'Completed', price: Number(paymentAmount) } : o));
+                            await orderAPI.updateStatus(orderId, { status: 'PaymentPending', price: Number(paymentAmount) });
+                            setOrders(orders.map(o => o._id === orderId ? { ...o, status: 'PaymentPending', price: Number(paymentAmount) } : o));
                             setPayingOrderId(null);
                             setPaymentAmount('');
-                            Alert.alert('Success', 'Cash payment recorded. Order completed!');
+                            Alert.alert('Success', 'Payment submitted for admin approval. You will be notified once approved.');
                         } catch (error) {
-                            Alert.alert('Error', 'Failed to update order status.');
+                            Alert.alert('Error', 'Failed to submit payment.');
                         }
                     }
                 }
@@ -166,7 +186,17 @@ export default function PartnerDashboardScreen() {
 
     return (
         <SafeAreaView style={styles.container}>
-            <ScrollView contentContainerStyle={styles.scrollContent}>
+            <ScrollView
+                contentContainerStyle={styles.scrollContent}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        colors={[Colors.primary]}
+                        tintColor={Colors.primary}
+                    />
+                }
+            >
 
                 {/* Header & Status Switch */}
                 <View style={styles.header}>
@@ -202,6 +232,17 @@ export default function PartnerDashboardScreen() {
                     />
                     <StatCard label="Pending" value={orders.filter(o => o.status === 'Pending').length} icon="time-outline" color={Colors.warning} />
                 </View>
+
+                {/* Show QR Button */}
+                {qrCodeUrl && (
+                    <TouchableOpacity
+                        style={styles.showQrButton}
+                        onPress={() => setQrModalVisible(true)}
+                    >
+                        <Ionicons name="qr-code-outline" size={22} color={Colors.secondary} />
+                        <Text style={styles.showQrButtonText}>Show QR Code</Text>
+                    </TouchableOpacity>
+                )}
 
                 {/* Recent Orders Section */}
                 <Text style={styles.sectionTitle}>Recent Orders</Text>
@@ -285,6 +326,16 @@ export default function PartnerDashboardScreen() {
                                             </View>
                                         )}
                                     </>
+                                )}
+
+                                {/* PaymentPending: Show waiting for approval message */}
+                                {item.status === 'PaymentPending' && (
+                                    <View style={styles.paymentPendingBadge}>
+                                        <Ionicons name="time-outline" size={18} color="#F59E0B" />
+                                        <Text style={styles.paymentPendingText}>
+                                            Awaiting admin approval for ₹{item.price}
+                                        </Text>
+                                    </View>
                                 )}
                             </TouchableOpacity>
                         ))
@@ -374,6 +425,42 @@ export default function PartnerDashboardScreen() {
                                 )}
                             </ScrollView>
                         )}
+                    </View>
+                </View>
+            </Modal>
+
+            {/* QR Code Modal */}
+            <Modal
+                visible={qrModalVisible}
+                animationType="fade"
+                transparent={true}
+                onRequestClose={() => setQrModalVisible(false)}
+            >
+                <View style={styles.qrModalOverlay}>
+                    <View style={styles.qrModalContent}>
+                        <View style={styles.qrModalHeader}>
+                            <Text style={styles.qrModalTitle}>Payment QR Code</Text>
+                            <TouchableOpacity onPress={() => setQrModalVisible(false)} style={styles.closeButton}>
+                                <Ionicons name="close" size={24} color={Colors.text} />
+                            </TouchableOpacity>
+                        </View>
+                        <View style={styles.qrImageContainer}>
+                            {qrCodeUrl ? (
+                                <Image
+                                    source={{ uri: qrCodeUrl }}
+                                    style={styles.qrImage}
+                                    resizeMode="contain"
+                                />
+                            ) : (
+                                <View style={styles.qrPlaceholder}>
+                                    <Ionicons name="qr-code-outline" size={80} color={Colors.textLight} />
+                                    <Text style={styles.qrPlaceholderText}>No QR code available</Text>
+                                </View>
+                            )}
+                        </View>
+                        <Text style={styles.qrHelpText}>
+                            Show this QR code to customers for payment
+                        </Text>
                     </View>
                 </View>
             </Modal>
@@ -710,5 +797,100 @@ const styles = StyleSheet.create({
         borderRadius: 22,
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    // Show QR Button styles
+    showQrButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: Colors.primary,
+        marginHorizontal: 20,
+        marginBottom: 20,
+        paddingVertical: 14,
+        borderRadius: 14,
+        gap: 10,
+        shadowColor: Colors.primary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 6,
+    },
+    showQrButtonText: {
+        color: Colors.secondary,
+        fontSize: 16,
+        fontWeight: '700',
+    },
+    // QR Modal styles
+    qrModalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.7)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    qrModalContent: {
+        backgroundColor: Colors.secondary,
+        borderRadius: 24,
+        width: '85%',
+        maxWidth: 350,
+        padding: 24,
+        alignItems: 'center',
+    },
+    qrModalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        width: '100%',
+        marginBottom: 20,
+    },
+    qrModalTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: Colors.text,
+    },
+    qrImageContainer: {
+        width: '100%',
+        aspectRatio: 1,
+        backgroundColor: Colors.gray,
+        borderRadius: 16,
+        overflow: 'hidden',
+        marginBottom: 16,
+    },
+    qrImage: {
+        width: '100%',
+        height: '100%',
+    },
+    qrPlaceholder: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    qrPlaceholderText: {
+        marginTop: 12,
+        fontSize: 14,
+        color: Colors.textLight,
+    },
+    qrHelpText: {
+        fontSize: 14,
+        color: Colors.textLight,
+        textAlign: 'center',
+    },
+    // Payment Pending styles
+    paymentPendingBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        backgroundColor: '#FEF3C7',
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        borderRadius: 12,
+        marginTop: 12,
+        borderWidth: 1,
+        borderColor: '#FCD34D',
+    },
+    paymentPendingText: {
+        color: '#B45309',
+        fontSize: 13,
+        fontWeight: '600',
     },
 });

@@ -116,6 +116,8 @@ export default function BookingsScreen() {
                 return Colors.warning;
             case 'Accepted':
                 return Colors.primary;
+            case 'PaymentPending':
+                return '#F59E0B';
             case 'Completed':
                 return Colors.success;
             case 'Cancelled':
@@ -131,6 +133,8 @@ export default function BookingsScreen() {
                 return 'time-outline';
             case 'Accepted':
                 return 'checkmark-circle-outline';
+            case 'PaymentPending':
+                return 'wallet-outline';
             case 'Completed':
                 return 'checkmark-done-circle-outline';
             case 'Cancelled':
