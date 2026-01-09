@@ -32,10 +32,21 @@ const limiter = rateLimit({
 app.use('/api', limiter);
 
 // CORS configuration
+const allowedOrigins = [process.env.FRONTEND_URL, process.env.ADMIN_URL]
+    .filter(Boolean)
+    .map(url => url.replace(/\/$/, '')); // Remove trailing slash if present
+
 const corsOptions = {
-    origin: process.env.NODE_ENV === 'production'
-        ? [process.env.FRONTEND_URL, process.env.ADMIN_URL].filter(Boolean)
-        : '*',
+    origin: (origin, callback) => {
+        if (process.env.NODE_ENV !== 'production' || !origin) {
+            callback(null, true);
+        } else if (allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            console.log('Blocked by CORS:', origin);
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
@@ -57,10 +68,12 @@ app.use('/api/settings', require('./routes/settingsRoutes'));
 
 // Health check endpoint
 app.get('/', (req, res) => {
+    const mongoose = require('mongoose');
     res.json({
         status: 'OK',
         message: 'QuickHomies API is running',
         environment: process.env.NODE_ENV || 'development',
+        dbState: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
         timestamp: new Date().toISOString()
     });
 });
@@ -70,7 +83,28 @@ app.get('/health', (req, res) => {
 });
 
 app.get('/api/health', (req, res) => {
-    res.json({ status: 'healthy', timestamp: new Date().toISOString() });
+    const mongoose = require('mongoose');
+    const dbState = mongoose.connection.readyState;
+    const dbStatus = {
+        0: 'disconnected',
+        1: 'connected',
+        2: 'connecting',
+        3: 'disconnecting',
+    };
+
+    if (dbState !== 1) {
+        return res.status(503).json({
+            status: 'unhealthy',
+            db: dbStatus[dbState] || 'unknown',
+            timestamp: new Date().toISOString()
+        });
+    }
+
+    res.json({
+        status: 'healthy',
+        db: 'connected',
+        timestamp: new Date().toISOString()
+    });
 });
 
 // 404 handler
