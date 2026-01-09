@@ -43,7 +43,7 @@ export default function BecomeHelperScreen() {
             await AsyncStorage.setItem('user', JSON.stringify(data));
 
             Alert.alert('Success', 'Welcome Partner! Your profile is created.', [
-                { text: 'Go to Dashboard', onPress: () => router.replace('/(tabs)/partner') }
+                { text: 'Go to Dashboard', onPress: () => router.replace('/(drawer)/partner') }
             ]);
 
         } catch (error: any) {

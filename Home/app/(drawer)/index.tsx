@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, ScrollView, TextInput, Image, TouchableOpacity,
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/Colors';
-import { useRouter, useFocusEffect } from 'expo-router';
+import { useRouter, useFocusEffect, useNavigation } from 'expo-router';
+import { DrawerActions } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { serviceAPI } from '../../services/api';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -27,6 +28,7 @@ const COLORS = {
 
 export default function HomeScreen() {
     const router = useRouter();
+    const navigation = useNavigation();
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [services, setServices] = useState<any[]>([]);
     const [userName, setUserName] = useState('');
@@ -128,6 +130,9 @@ export default function HomeScreen() {
                 >
                     <View style={styles.header}>
                         <View style={styles.locationContainer}>
+                            <TouchableOpacity onPress={() => navigation.dispatch(DrawerActions.openDrawer())}>
+                                <Ionicons name="menu" size={28} color={COLORS.white} />
+                            </TouchableOpacity>
                             <View style={styles.logoContainer}>
                                 <Image
                                     source={require('../../assets/images/logo.png')}
@@ -152,6 +157,12 @@ export default function HomeScreen() {
                                 </TouchableOpacity>
                             ) : (
                                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                                    <TouchableOpacity
+                                        style={styles.profileButton}
+                                        onPress={() => router.push('/notifications')}
+                                    >
+                                        <Ionicons name="notifications-outline" size={20} color={COLORS.white} />
+                                    </TouchableOpacity>
                                     <TouchableOpacity
                                         style={styles.profileButton}
                                         onPress={() => router.push('/profile')}
@@ -593,7 +604,7 @@ const styles = StyleSheet.create({
         gap: 14,
     },
     serviceCard: {
-        width: (width - 56) / 3,
+        width: (width - 70) / 3,
         backgroundColor: COLORS.white,
         borderRadius: 18,
         padding: 12,

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity, Alert, Modal, Linking, TextInput, Image, ActivityIndicator, RefreshControl } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useNavigation } from 'expo-router';
+import { DrawerActions } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -9,6 +10,7 @@ import { orderAPI, userAPI, settingsAPI } from '../../services/api';
 
 export default function PartnerDashboardScreen() {
     const router = useRouter();
+    const navigation = useNavigation();
     const [isOnline, setIsOnline] = useState(true);
     const [orders, setOrders] = useState<any[]>([]);
     const [user, setUser] = useState<any>(null);
@@ -47,7 +49,7 @@ export default function PartnerDashboardScreen() {
                 const parsedUser = JSON.parse(userData);
                 if (parsedUser.role !== 'professional') {
                     Alert.alert('Access Denied', 'This dashboard is for partners only.');
-                    router.replace('/(tabs)');
+                    router.replace('/(drawer)');
                     return;
                 }
 
@@ -201,7 +203,12 @@ export default function PartnerDashboardScreen() {
                 {/* Header & Status Switch */}
                 <View style={styles.header}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
-                        <Text style={styles.headerTitle}>Partner Dashboard</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                            <TouchableOpacity onPress={() => navigation.dispatch(DrawerActions.openDrawer())}>
+                                <Ionicons name="menu" size={28} color={Colors.secondary} />
+                            </TouchableOpacity>
+                            <Text style={styles.headerTitle}>Partner Dashboard</Text>
+                        </View>
                         <TouchableOpacity
                             style={{
                                 width: 40,

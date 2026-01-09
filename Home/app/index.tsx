@@ -14,7 +14,7 @@ export default function Index() {
     try {
       const user = await AsyncStorage.getItem('user');
       if (user) {
-        router.replace('/(tabs)');
+        router.replace('/(drawer)');
       } else {
         router.replace('/auth/login');
       }

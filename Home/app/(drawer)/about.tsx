@@ -4,10 +4,12 @@ import { View, Text, StyleSheet, ScrollView, Image, RefreshControl, TouchableOpa
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/Colors';
-import { useRouter } from 'expo-router';
+import { useRouter, useNavigation } from 'expo-router';
+import { DrawerActions } from '@react-navigation/native';
 
 export default function AboutScreen() {
     const router = useRouter();
+    const navigation = useNavigation();
     const features = [
         { icon: 'shield-checkmark-outline', title: 'Verified Professionals', description: 'All our service providers are thoroughly verified' },
         { icon: 'flash-outline', title: 'Quick Service', description: 'Get help within hours, not days' },
@@ -33,7 +35,12 @@ export default function AboutScreen() {
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
-                <Text style={styles.headerTitle}>About Us</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                    <TouchableOpacity onPress={() => navigation.dispatch(DrawerActions.openDrawer())}>
+                        <Ionicons name="menu" size={28} color={Colors.secondary} />
+                    </TouchableOpacity>
+                    <Text style={styles.headerTitle}>About Us</Text>
+                </View>
                 <TouchableOpacity
                     style={styles.profileButton}
                     onPress={() => router.push('/profile')}
@@ -66,9 +73,7 @@ export default function AboutScreen() {
                 <View style={styles.missionCard}>
                     <Text style={styles.missionTitle}>Our Mission</Text>
                     <Text style={styles.missionText}>
-                        At QuickHomies, we believe everyone deserves access to reliable, professional home services.
-                        Our mission is to connect homeowners with skilled professionals, making home maintenance
-                        and repairs hassle-free and affordable.
+                        Our mission is to simplify access to everyday services by building a reliable, technology-driven platform that empowers skilled workers, ensures customer trust, enables fair earnings, and creates sustainable service ecosystems that grow seamlessly from local communities to global markets.
                     </Text>
                 </View>
 
@@ -107,8 +112,7 @@ export default function AboutScreen() {
                         has grown into a trusted platform serving thousands of customers across the city.
                     </Text>
                     <Text style={styles.storyText}>
-                        We carefully vet each professional on our platform, ensuring you receive only the
-                        best service. Our commitment to quality and customer satisfaction drives everything we do.
+                       Quick Homies was founded by five friends who came together with a shared vision to simplify everyday services through technology. What started as a small idea has grown into a purpose-driven platform focused on trust, accessibility, and efficiency. By connecting customers with verified local helpers, the team aims to empower workers, create employment opportunities, and make reliable services available at the tap of a button. Quick Homies is built for scale, impact, and long-term community value.
                     </Text>
                 </View>
 

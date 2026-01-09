@@ -6,10 +6,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/Colors';
 import { orderAPI, reviewAPI } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter, useFocusEffect } from 'expo-router';
+import { useRouter, useFocusEffect, useNavigation } from 'expo-router';
+import { DrawerActions } from '@react-navigation/native';
 
 export default function BookingsScreen() {
     const router = useRouter();
+    const navigation = useNavigation();
     const [orders, setOrders] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -162,7 +164,12 @@ export default function BookingsScreen() {
         return (
             <SafeAreaView style={styles.container}>
                 <View style={styles.header}>
-                    <Text style={styles.headerTitle}>My Bookings</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                        <TouchableOpacity onPress={() => navigation.dispatch(DrawerActions.openDrawer())}>
+                            <Ionicons name="menu" size={28} color={Colors.secondary} />
+                        </TouchableOpacity>
+                        <Text style={styles.headerTitle}>My Bookings</Text>
+                    </View>
                 </View>
                 <View style={styles.emptyContainer}>
                     <Ionicons name="log-in-outline" size={60} color={Colors.textLight} />
@@ -182,9 +189,14 @@ export default function BookingsScreen() {
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
-                <View>
-                    <Text style={styles.headerTitle}>My Bookings</Text>
-                    <Text style={styles.headerSubtitle}>{orders.length} order(s)</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                    <TouchableOpacity onPress={() => navigation.dispatch(DrawerActions.openDrawer())}>
+                        <Ionicons name="menu" size={28} color={Colors.secondary} />
+                    </TouchableOpacity>
+                    <View>
+                        <Text style={styles.headerTitle}>My Bookings</Text>
+                        <Text style={styles.headerSubtitle}>{orders.length} order(s)</Text>
+                    </View>
                 </View>
                 <TouchableOpacity
                     style={styles.profileButton}
@@ -211,7 +223,7 @@ export default function BookingsScreen() {
                         <Text style={styles.emptyText}>Your bookings will appear here</Text>
                         <TouchableOpacity
                             style={styles.browseButton}
-                            onPress={() => router.push('/(tabs)')}
+                            onPress={() => router.push('/(drawer)')}
                         >
                             <Text style={styles.browseButtonText}>Browse Services</Text>
                         </TouchableOpacity>

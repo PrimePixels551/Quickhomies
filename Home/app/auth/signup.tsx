@@ -141,7 +141,7 @@ export default function SignupScreen() {
                 Alert.alert('Success', 'Partner account created! waiting for admin approval.');
             }
 
-            router.replace('/(tabs)');
+            router.replace('/(drawer)');
         } catch (error: any) {
             console.error(error);
             alert('Signup failed.');
@@ -150,6 +150,12 @@ export default function SignupScreen() {
 
     return (
         <SafeAreaView style={styles.container}>
+            <View style={{ position: 'absolute', top: 60, right: 30, zIndex: 99 }}>
+                <TouchableOpacity onPress={() => router.replace('/(drawer)')} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.primary, padding: 8, borderRadius: 12, elevation: 2, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 4 }}>
+                    <Ionicons name="home-outline" size={20} color={Colors.secondary} />
+                    <Text style={{ marginLeft: 4, color: Colors.secondary, fontWeight: 'bold' }}>Home</Text>
+                </TouchableOpacity>
+            </View>
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={{ flex: 1 }}

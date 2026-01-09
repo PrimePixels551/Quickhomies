@@ -191,14 +191,14 @@ export default function ProfileScreen() {
 
                     <Text style={styles.sectionHeader}>Activity</Text>
                     <View style={styles.menuCard}>
-                        <TouchableOpacity onPress={() => router.push('/(tabs)/bookings')}>
+                        <TouchableOpacity onPress={() => router.push('/(drawer)/bookings')}>
                             <ProfileMenuItem icon="calendar-outline" label="Booking History" />
                         </TouchableOpacity>
                     </View>
 
                     <Text style={styles.sectionHeader}>Support</Text>
                     <View style={styles.menuCard}>
-                        <TouchableOpacity onPress={() => router.push('/(tabs)/contact')}>
+                        <TouchableOpacity onPress={() => router.push('/(drawer)/contact')}>
                             <ProfileMenuItem icon="help-buoy-outline" label="Help & Support" />
                         </TouchableOpacity>
                         <View style={styles.menuDivider} />

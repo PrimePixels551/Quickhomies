@@ -12,14 +12,14 @@ const isProduction = Constants.expoConfig?.extra?.ENV === 'production' ||
 
 // Development configuration
 const devConfig: AppConfig = {
-    apiUrl: 'http://192.168.1.16:5000/api', // Your local IP - change if network changes
+    apiUrl: 'https://quickhomies.onrender.com/api', // Your local IP - change if network changes
     appName: 'QuickHomies',
     isProduction: false,
 };
 
 // Production configuration
 const prodConfig: AppConfig = {
-    apiUrl: 'https://api.quickhomies.com/api', // Your production API URL
+    apiUrl: 'https://quickhomies.onrender.com/api', // Render production API
     appName: 'QuickHomies',
     isProduction: true,
 };

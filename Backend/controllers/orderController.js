@@ -1,6 +1,8 @@
 
 const Order = require('../models/Order');
 
+const Notification = require('../models/Notification');
+
 // Create new order
 const createOrder = async (req, res) => {
     const { customer, professional, serviceName, description, price } = req.body;
@@ -18,6 +20,18 @@ const createOrder = async (req, res) => {
             price,
             status: 'Pending',
         });
+
+        // Notify Professional if assigned
+        if (professional) {
+            await Notification.create({
+                recipient: professional,
+                title: 'New Service Request',
+                message: `You have received a new request for ${serviceName}`,
+                type: 'order',
+                relatedId: order._id
+            });
+        }
+
         res.status(201).json(order);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -50,11 +64,24 @@ const updateOrderStatus = async (req, res) => {
     try {
         const order = await Order.findById(id);
         if (order) {
+            const oldStatus = order.status;
             order.status = status || order.status;
             if (price !== undefined) {
                 order.price = price;
             }
             const updatedOrder = await order.save();
+
+            // Notify Customer on status change
+            if (status && status !== oldStatus && order.customer) {
+                await Notification.create({
+                    recipient: order.customer,
+                    title: 'Order Status Updated',
+                    message: `Your order for ${order.serviceName} is now ${status}`,
+                    type: 'order',
+                    relatedId: order._id
+                });
+            }
+
             res.json(updatedOrder);
         } else {
             res.status(404).json({ message: 'Order not found' });

@@ -4,15 +4,17 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, Alert, R
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/Colors';
-import { useRouter } from 'expo-router';
+import { useRouter, useNavigation } from 'expo-router';
+import { DrawerActions } from '@react-navigation/native';
 
 export default function ContactScreen() {
     const router = useRouter();
+    const navigation = useNavigation();
     const contactInfo = {
-        phone: '+91 9876543210',
-        email: 'support@quickhomies.com',
-        whatsapp: '+919876543210',
-        address: '123 Main Street, Tech Park, Hyderabad, Telangana 500001',
+        phone: '+91 8810660863',
+        email: 'quickhomiesofficial@gmail.com',
+        whatsapp: '+91 8810660863',
+        address: 'K-1 Sarvodaya Bal Vidyalaya, Mangol Puri Delhi',
         workingHours: 'Mon - Sat: 9:00 AM - 8:00 PM',
     };
 
@@ -61,9 +63,14 @@ export default function ContactScreen() {
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
-                <View>
-                    <Text style={styles.headerTitle}>Contact Us</Text>
-                    <Text style={styles.headerSubtitle}>We're here to help!</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                    <TouchableOpacity onPress={() => navigation.dispatch(DrawerActions.openDrawer())}>
+                        <Ionicons name="menu" size={28} color={Colors.secondary} />
+                    </TouchableOpacity>
+                    <View>
+                        <Text style={styles.headerTitle}>Contact Us</Text>
+                        <Text style={styles.headerSubtitle}>We're here to help!</Text>
+                    </View>
                 </View>
                 <TouchableOpacity
                     style={styles.profileButton}

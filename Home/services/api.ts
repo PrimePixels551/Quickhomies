@@ -50,4 +50,10 @@ export const settingsAPI = {
     get: (key: string) => api.get(`/settings/${key}`),
 };
 
+export const notificationAPI = {
+    getAll: (userId: string) => api.get(`/notifications?userId=${userId}`),
+    markRead: (id: string) => api.put(`/notifications/${id}/read`),
+    markAllRead: (userId: string) => api.put('/notifications/read-all', { userId }),
+};
+
 export default api;
