@@ -81,10 +81,6 @@ export default function LoginScreen() {
                             </TouchableOpacity>
                         </View>
 
-                        <TouchableOpacity style={styles.forgotButton}>
-                            <Text style={styles.forgotText}>Forgot Password?</Text>
-                        </TouchableOpacity>
-
                         <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
                             <Text style={styles.loginButtonText}>Login</Text>
                             <Ionicons name="arrow-forward" size={20} color={Colors.secondary} style={{ marginLeft: 8 }} />

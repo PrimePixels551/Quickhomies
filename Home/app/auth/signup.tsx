@@ -108,8 +108,9 @@ export default function SignupScreen() {
     };
 
     const handleSignup = async () => {
-        if (role === 'professional' && !idProofUrl) {
-            Alert.alert('ID Proof Required', 'Please upload your government ID proof.');
+        // Validate password for professional role
+        if (role === 'professional' && !password) {
+            Alert.alert('Password Required', 'Please enter a password.');
             return;
         }
 
@@ -119,21 +120,27 @@ export default function SignupScreen() {
         }
 
         try {
-            const payload = {
+            const payload: any = {
                 name,
                 // Email removed
                 phone,
                 address,
-                password,
                 role,
-                ...(role === 'professional' && {
-                    serviceCategory,
-                    idProof: idProofUrl,
-                    isAvailable: true,
-                    experience: parseInt(experience) || 0,
-                    profileImage: profileImageUrl,
-                })
             };
+
+            // Only include password for professional role
+            if (role === 'professional') {
+                payload.password = password;
+                payload.serviceCategory = serviceCategory;
+                payload.isAvailable = true;
+                payload.experience = parseInt(experience) || 0;
+                payload.profileImage = profileImageUrl;
+                // ID proof is optional
+                if (idProofUrl) {
+                    payload.idProof = idProofUrl;
+                }
+            }
+
             const { data } = await authAPI.register(payload);
             await AsyncStorage.setItem('user', JSON.stringify(data));
 
@@ -150,7 +157,7 @@ export default function SignupScreen() {
 
     return (
         <SafeAreaView style={styles.container}>
-            <View style={{ position: 'absolute', top: 60, right: 30, zIndex: 99 }}>
+            <View style={{ top: 60, right: 30, zIndex: 99 }}>
                 <TouchableOpacity onPress={() => router.replace('/(drawer)')} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.primary, padding: 8, borderRadius: 12, elevation: 2, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 4 }}>
                     <Ionicons name="home-outline" size={20} color={Colors.secondary} />
                     <Text style={{ marginLeft: 4, color: Colors.secondary, fontWeight: 'bold' }}>Home</Text>
@@ -286,10 +293,10 @@ export default function SignupScreen() {
                             </View>
                         )}
 
-                        {/* ID Proof Image Upload */}
+                        {/* ID Proof Image Upload - Optional for partners */}
                         {role === 'professional' && (
                             <View style={styles.idProofSection}>
-                                <Text style={styles.idProofLabel}>Government ID Proof (Aadhar/PAN)</Text>
+                                <Text style={styles.idProofLabel}>Government ID Proof (Optional)</Text>
 
                                 {idProofImage ? (
                                     <View style={styles.imagePreviewContainer}>
@@ -333,20 +340,23 @@ export default function SignupScreen() {
                             </View>
                         )}
 
-                        <View style={styles.inputWrapper}>
-                            <Ionicons name="lock-closed-outline" size={20} color={Colors.textLight} style={styles.inputIcon} />
-                            <TextInput
-                                style={styles.input}
-                                placeholder="Password"
-                                placeholderTextColor={Colors.textLight}
-                                secureTextEntry={!showPassword}
-                                value={password}
-                                onChangeText={setPassword}
-                            />
-                            <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                                <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={20} color={Colors.textLight} />
-                            </TouchableOpacity>
-                        </View>
+                        {/* Password field - Only for professionals/helpers */}
+                        {role === 'professional' && (
+                            <View style={styles.inputWrapper}>
+                                <Ionicons name="lock-closed-outline" size={20} color={Colors.textLight} style={styles.inputIcon} />
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="Password"
+                                    placeholderTextColor={Colors.textLight}
+                                    secureTextEntry={!showPassword}
+                                    value={password}
+                                    onChangeText={setPassword}
+                                />
+                                <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                                    <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={20} color={Colors.textLight} />
+                                </TouchableOpacity>
+                            </View>
+                        )}
 
                         <TouchableOpacity
                             style={[styles.signupButton, uploading && styles.signupButtonDisabled]}

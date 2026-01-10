@@ -5,7 +5,8 @@ const userSchema = mongoose.Schema(
     {
         name: { type: String, required: true },
         email: { type: String, required: false },
-        password: { type: String, required: true },
+        // Password is optional for regular users (customers), required for professionals
+        password: { type: String, required: false },
         phone: { type: String, required: true, unique: true },
         address: { type: String, required: true, },
         role: {
@@ -32,11 +33,16 @@ const userSchema = mongoose.Schema(
 );
 
 userSchema.methods.matchPassword = async function (enteredPassword) {
+    // If no password set, return false
+    if (!this.password) {
+        return false;
+    }
     return await bcrypt.compare(enteredPassword, this.password);
 };
 
 userSchema.pre('save', async function (next) {
-    if (!this.isModified('password')) {
+    // Skip hashing if password isn't set or hasn't been modified
+    if (!this.password || !this.isModified('password')) {
         return next();
     }
     const salt = await bcrypt.genSalt(10);
