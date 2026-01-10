@@ -113,6 +113,10 @@ export default function SignupScreen() {
             Alert.alert('Password Required', 'Please enter a password.');
             return;
         }
+        // if (role === 'professional' && !idProofUrl) {
+        //     Alert.alert('ID Proof Required', 'Please upload your government ID proof.');
+        //     return;
+        // }
 
         if (role === 'professional' && !profileImageUrl) {
             Alert.alert('Profile Photo Required', 'Please upload your profile photo.');
