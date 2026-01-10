@@ -6,7 +6,7 @@ import { Colors } from '../../constants/Colors';
 import { useRouter, useFocusEffect, useNavigation } from 'expo-router';
 import { DrawerActions } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { serviceAPI } from '../../services/api';
+import { serviceAPI, notificationAPI } from '../../services/api';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const { width } = Dimensions.get('window');
@@ -34,6 +34,8 @@ export default function HomeScreen() {
     const [userName, setUserName] = useState('');
     const [isProfessional, setIsProfessional] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [unreadCount, setUnreadCount] = useState(0);
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const slideAnim = useRef(new Animated.Value(30)).current;
 
@@ -72,8 +74,24 @@ export default function HomeScreen() {
     useFocusEffect(
         useCallback(() => {
             checkAuth();
+            fetchUnreadCount();
         }, [])
     );
+
+    const fetchUnreadCount = async () => {
+        const userData = await AsyncStorage.getItem('user');
+        if (userData) {
+            const user = JSON.parse(userData);
+            try {
+                const { data } = await notificationAPI.getUnreadCount(user._id);
+                setUnreadCount(data.count || 0);
+            } catch (error) {
+                console.log('Error fetching unread count:', error);
+            }
+        } else {
+            setUnreadCount(0);
+        }
+    };
 
     const checkAuth = async () => {
         const userData = await AsyncStorage.getItem('user');
@@ -102,7 +120,7 @@ export default function HomeScreen() {
 
     const onRefresh = async () => {
         setRefreshing(true);
-        await Promise.all([fetchServices(), checkAuth()]);
+        await Promise.all([fetchServices(), checkAuth(), fetchUnreadCount()]);
         setRefreshing(false);
     };
 
@@ -162,6 +180,13 @@ export default function HomeScreen() {
                                         onPress={() => router.push('/notifications')}
                                     >
                                         <Ionicons name="notifications-outline" size={20} color={COLORS.white} />
+                                        {unreadCount > 0 && (
+                                            <View style={styles.notificationBadge}>
+                                                <Text style={styles.notificationBadgeText}>
+                                                    {unreadCount > 99 ? '99+' : unreadCount}
+                                                </Text>
+                                            </View>
+                                        )}
                                     </TouchableOpacity>
                                     <TouchableOpacity
                                         style={styles.profileButton}
@@ -183,18 +208,93 @@ export default function HomeScreen() {
                             placeholder="Search for services..."
                             placeholderTextColor={COLORS.grey}
                             style={styles.searchInput}
+                            value={searchQuery}
+                            onChangeText={setSearchQuery}
+                            returnKeyType="search"
+                            onSubmitEditing={() => {
+                                if (searchQuery.trim()) {
+                                    router.push('/services');
+                                }
+                            }}
                         />
-                        <TouchableOpacity style={styles.filterButton}>
-                            <LinearGradient
-                                colors={[COLORS.blue, COLORS.lightBlue]}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 1 }}
-                                style={styles.filterButtonGradient}
+                        {searchQuery.length > 0 ? (
+                            <TouchableOpacity
+                                style={styles.filterButton}
+                                onPress={() => setSearchQuery('')}
                             >
-                                <Ionicons name="options-outline" size={20} color={COLORS.white} />
-                            </LinearGradient>
-                        </TouchableOpacity>
+                                <View style={[styles.filterButtonGradient, { backgroundColor: COLORS.grey }]}>
+                                    <Ionicons name="close" size={20} color={COLORS.white} />
+                                </View>
+                            </TouchableOpacity>
+                        ) : (
+                            <TouchableOpacity
+                                style={styles.filterButton}
+                                onPress={() => router.push('/services')}
+                            >
+                                <LinearGradient
+                                    colors={[COLORS.blue, COLORS.lightBlue]}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 1 }}
+                                    style={styles.filterButtonGradient}
+                                >
+                                    <Ionicons name="options-outline" size={20} color={COLORS.white} />
+                                </LinearGradient>
+                            </TouchableOpacity>
+                        )}
                     </View>
+
+                    {/* Search Results Dropdown */}
+                    {searchQuery.trim().length > 0 && (
+                        <View style={styles.searchResultsContainer}>
+                            {services
+                                .filter(service =>
+                                    service.name.toLowerCase().includes(searchQuery.toLowerCase())
+                                )
+                                .slice(0, 5)
+                                .map((service) => (
+                                    <TouchableOpacity
+                                        key={service.id}
+                                        style={styles.searchResultItem}
+                                        onPress={() => {
+                                            setSearchQuery('');
+                                            router.push({
+                                                pathname: '/service/[id]',
+                                                params: { id: service.id, name: service.name, minPrice: service.minPrice, maxPrice: service.maxPrice }
+                                            });
+                                        }}
+                                    >
+                                        <View style={styles.searchResultIcon}>
+                                            <Ionicons name={service.icon as any || 'construct-outline'} size={20} color={COLORS.blue} />
+                                        </View>
+                                        <View style={styles.searchResultInfo}>
+                                            <Text style={styles.searchResultName}>{service.name}</Text>
+                                            {(service.minPrice > 0 || service.maxPrice > 0) && (
+                                                <Text style={styles.searchResultPrice}>₹{service.minPrice} - ₹{service.maxPrice}</Text>
+                                            )}
+                                        </View>
+                                        <Ionicons name="chevron-forward" size={18} color={COLORS.grey} />
+                                    </TouchableOpacity>
+                                ))
+                            }
+                            {services.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
+                                <View style={styles.noSearchResults}>
+                                    <Ionicons name="search-outline" size={24} color={COLORS.grey} />
+                                    <Text style={styles.noSearchResultsText}>No services found</Text>
+                                </View>
+                            )}
+                            {services.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase())).length > 5 && (
+                                <TouchableOpacity
+                                    style={styles.viewAllResults}
+                                    onPress={() => {
+                                        router.push('/services');
+                                    }}
+                                >
+                                    <Text style={styles.viewAllResultsText}>View all results</Text>
+                                    <Ionicons name="arrow-forward" size={16} color={COLORS.blue} />
+                                </TouchableOpacity>
+                            )}
+                        </View>
+                    )}
                 </LinearGradient>
 
                 {/* Hero Section - Premium Navy */}
@@ -231,14 +331,25 @@ export default function HomeScreen() {
                     </LinearGradient>
                 </Animated.View>
 
+
+                {!isProfessional && (<TouchableOpacity
+                    style={styles.exploreButton}
+                    onPress={() => router.push('/services')}
+                >
+                    <Text style={styles.exploreButtonText}>Explore</Text>
+                    <Ionicons name="arrow-forward" size={16} color={COLORS.white} />
+                </TouchableOpacity>)}
+
                 {/* Services Grid - Clean & Premium - Only for Users */}
                 {!isProfessional && (
                     <View style={styles.servicesSection}>
                         <View style={styles.sectionHeader}>
+
                             <View>
                                 <Text style={styles.sectionTitle}>Our Services</Text>
                                 <Text style={styles.sectionSubtitle}>Choose from our wide range</Text>
                             </View>
+
                         </View>
                         <View style={styles.servicesGrid}>
                             {services.map((service, index) => {
@@ -314,34 +425,36 @@ export default function HomeScreen() {
                     </View>
                 </View>
 
-                {/* Become a Helper Banner - Blue Accent */}
-                <TouchableOpacity
-                    style={styles.helperBanner}
-                    activeOpacity={0.9}
-                    onPress={() => router.push('/become-helper')}
-                >
-                    <LinearGradient
-                        colors={[COLORS.blue, COLORS.lightBlue]}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        style={styles.helperBannerGradient}
+                {/* Become a Helper Banner - Blue Accent - Only for Customers */}
+                {!isProfessional && (
+                    <TouchableOpacity
+                        style={styles.helperBanner}
+                        activeOpacity={0.9}
+                        onPress={() => router.push('/become-helper')}
                     >
-                        <View style={styles.helperBannerContent}>
-                            <View style={styles.helperIconCircle}>
-                                <Ionicons name="briefcase" size={32} color={COLORS.white} />
+                        <LinearGradient
+                            colors={[COLORS.blue, COLORS.lightBlue]}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={styles.helperBannerGradient}
+                        >
+                            <View style={styles.helperBannerContent}>
+                                <View style={styles.helperIconCircle}>
+                                    <Ionicons name="briefcase" size={32} color={COLORS.white} />
+                                </View>
+                                <View style={styles.helperTextContainer}>
+                                    <Text style={styles.helperBannerTitle}>Become a Helper</Text>
+                                    <Text style={styles.helperBannerSubtitle}>Join our team & earn money</Text>
+                                </View>
                             </View>
-                            <View style={styles.helperTextContainer}>
-                                <Text style={styles.helperBannerTitle}>Become a Helper</Text>
-                                <Text style={styles.helperBannerSubtitle}>Join our team & earn money</Text>
+                            <View style={styles.arrowCircle}>
+                                <Ionicons name="arrow-forward" size={24} color={COLORS.white} />
                             </View>
-                        </View>
-                        <View style={styles.arrowCircle}>
-                            <Ionicons name="arrow-forward" size={24} color={COLORS.white} />
-                        </View>
-                        <View style={styles.bannerDecoration1} />
-                        <View style={styles.bannerDecoration2} />
-                    </LinearGradient>
-                </TouchableOpacity>
+                            <View style={styles.bannerDecoration1} />
+                            <View style={styles.bannerDecoration2} />
+                        </LinearGradient>
+                    </TouchableOpacity>
+                )}
 
             </ScrollView>
         </SafeAreaView>
@@ -464,6 +577,25 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.2)',
     },
+    notificationBadge: {
+        position: 'absolute',
+        top: -4,
+        right: -4,
+        minWidth: 18,
+        height: 18,
+        borderRadius: 9,
+        backgroundColor: '#EF4444',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 4,
+        borderWidth: 2,
+        borderColor: COLORS.navy,
+    },
+    notificationBadgeText: {
+        color: COLORS.white,
+        fontSize: 10,
+        fontWeight: '700',
+    },
     searchContainer: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -495,10 +627,78 @@ const styles = StyleSheet.create({
     filterButtonGradient: {
         padding: 10,
     },
+    // Search Results Dropdown Styles
+    searchResultsContainer: {
+        backgroundColor: COLORS.white,
+        marginHorizontal: 20,
+        marginTop: 8,
+        borderRadius: 16,
+        shadowColor: COLORS.navy,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+        elevation: 6,
+        overflow: 'hidden',
+    },
+    searchResultItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.greyBg,
+    },
+    searchResultIcon: {
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        backgroundColor: COLORS.greyBg,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 12,
+    },
+    searchResultInfo: {
+        flex: 1,
+    },
+    searchResultName: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: COLORS.navy,
+        marginBottom: 2,
+    },
+    searchResultPrice: {
+        fontSize: 12,
+        color: COLORS.blue,
+        fontWeight: '500',
+    },
+    noSearchResults: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 20,
+        gap: 8,
+    },
+    noSearchResultsText: {
+        fontSize: 14,
+        color: COLORS.grey,
+    },
+    viewAllResults: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 14,
+        gap: 6,
+        backgroundColor: COLORS.greyBg,
+    },
+    viewAllResultsText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: COLORS.blue,
+    },
     heroContainer: {
         marginHorizontal: 20,
         marginTop: 24,
-        marginBottom: 32,
+        marginBottom: 24,
         borderRadius: 28,
         overflow: 'hidden',
         shadowColor: COLORS.navy,
@@ -596,6 +796,22 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: COLORS.grey,
         fontWeight: '500',
+    },
+    exploreButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: COLORS.blue,
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadius: 20,
+        gap: 6,
+        marginBottom: 15,
+        marginHorizontal: 23,
+    },
+    exploreButtonText: {
+        color: COLORS.white,
+        fontSize: 18,
+        fontWeight: '600',
     },
     servicesGrid: {
         flexDirection: 'row',

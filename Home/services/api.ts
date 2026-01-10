@@ -22,6 +22,8 @@ export const userAPI = {
     toggleAvailability: (userId: string) => api.put(`/users/${userId}/availability`),
     updateProfile: (userId: string, data: { name?: string; phone?: string; address?: string; email?: string }) =>
         api.put(`/users/${userId}/profile`, data),
+    upgradeToPartner: (userId: string, data: { serviceCategory: string; isAvailable: boolean; idProof?: string }) =>
+        api.put(`/users/${userId}/upgrade-to-partner`, data),
 };
 
 export const orderAPI = {
@@ -52,8 +54,11 @@ export const settingsAPI = {
 
 export const notificationAPI = {
     getAll: (userId: string) => api.get(`/notifications?userId=${userId}`),
+    getUnreadCount: (userId: string) => api.get(`/notifications/unread-count?userId=${userId}`),
     markRead: (id: string) => api.put(`/notifications/${id}/read`),
     markAllRead: (userId: string) => api.put('/notifications/read-all', { userId }),
+    delete: (id: string) => api.delete(`/notifications/${id}`),
+    deleteAll: (userId: string) => api.delete('/notifications/delete-all', { data: { userId } }),
 };
 
 export default api;

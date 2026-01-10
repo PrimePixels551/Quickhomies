@@ -15,7 +15,7 @@ export default function ContactScreen() {
         email: 'quickhomiesofficial@gmail.com',
         whatsapp: '+91 8810660863',
         address: 'K-1 Sarvodaya Bal Vidyalaya, Mangol Puri Delhi',
-        workingHours: 'Mon - Sat: 9:00 AM - 8:00 PM',
+        workingHours: 'Tue - Sun: 9:00 AM - 8:00 PM',
     };
 
     const handlePhoneCall = () => {
@@ -147,16 +147,13 @@ export default function ContactScreen() {
                 {/* Social Links */}
                 <Text style={styles.sectionTitle}>Follow Us</Text>
                 <View style={styles.socialContainer}>
-                    <TouchableOpacity style={styles.socialButton}>
-                        <Ionicons name="logo-facebook" size={28} color="#1877F2" />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.socialButton}>
+                    <TouchableOpacity style={styles.socialButton} onPress={() => Linking.openURL('https://www.instagram.com/quickhomies?igsh=MTFibWhkM3podDYycQ==')}>
                         <Ionicons name="logo-instagram" size={28} color="#E4405F" />
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.socialButton}>
+                    <TouchableOpacity style={styles.socialButton} onPress={() => Linking.openURL('https://x.com/quickhomies')}>
                         <Ionicons name="logo-twitter" size={28} color="#1DA1F2" />
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.socialButton}>
+                    <TouchableOpacity style={styles.socialButton} onPress={() => Linking.openURL('https://www.linkedin.com/in/quick-homies-02650b3a4?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app')}>
                         <Ionicons name="logo-linkedin" size={28} color="#0A66C2" />
                     </TouchableOpacity>
                 </View>

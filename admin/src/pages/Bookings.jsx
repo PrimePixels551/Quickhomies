@@ -119,7 +119,7 @@ const BookingsPage = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
-                            {filteredOrders.map((order) => (
+                            {filteredOrders.slice().reverse().map((order) => (
                                 <tr key={order._id} className="hover:bg-gray-50 transition-colors">
                                     <td className="px-6 py-4 text-xs text-gray-400 font-mono">...{order._id.slice(-6)}</td>
                                     <td className="px-6 py-4 font-medium text-gray-900">{order.customer?.name || 'Unknown'}</td>
@@ -228,6 +228,13 @@ const BookingsPage = () => {
                                     <p className="text-sm text-gray-500">{selectedOrder.professional?.phone || 'No phone'}</p>
                                 </div>
                             </div>
+
+                            {selectedOrder.customer?.address && (
+                                <div className="border-t pt-4">
+                                    <h4 className="font-semibold text-gray-700 mb-1">📍 Service Address</h4>
+                                    <p className="text-gray-600 bg-blue-50 p-3 rounded-lg border border-blue-100">{selectedOrder.customer.address}</p>
+                                </div>
+                            )}
 
                             {selectedOrder.description && (
                                 <div className="border-t pt-4">

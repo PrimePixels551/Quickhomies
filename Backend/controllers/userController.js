@@ -155,4 +155,49 @@ const adminUpdateUser = async (req, res) => {
     }
 };
 
-module.exports = { getProfessionals, getAllProfessionals, getProfessionalsByCategory, getUsers, updateUserStatus, toggleAvailability, updateProfile, getUser, deleteUser, adminUpdateUser };
+// Upgrade customer to professional/partner
+const upgradeToPartner = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { serviceCategory, isAvailable, idProof } = req.body;
+
+        if (!serviceCategory) {
+            return res.status(400).json({ message: 'Service category is required' });
+        }
+
+        const user = await User.findById(id);
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        if (user.role === 'professional') {
+            return res.status(400).json({ message: 'User is already a partner' });
+        }
+
+        const updateData = {
+            role: 'professional',
+            serviceCategory,
+            isAvailable: isAvailable || false,
+            verificationStatus: 'pending'
+        };
+
+        // Add idProof if provided
+        if (idProof) {
+            updateData.idProof = idProof;
+        }
+
+        const updatedUser = await User.findByIdAndUpdate(
+            id,
+            updateData,
+            { new: true }
+        ).select('-password');
+
+        res.json(updatedUser);
+    } catch (error) {
+        console.error('Upgrade to Partner Error:', error);
+        res.status(500).json({ message: error.message });
+    }
+};
+
+module.exports = { getProfessionals, getAllProfessionals, getProfessionalsByCategory, getUsers, updateUserStatus, toggleAvailability, updateProfile, getUser, deleteUser, adminUpdateUser, upgradeToPartner };
