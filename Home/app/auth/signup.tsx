@@ -150,8 +150,9 @@ export default function SignupScreen() {
 
             router.replace('/(drawer)');
         } catch (error: any) {
-            console.error(error);
-            alert('Signup failed.');
+            console.error('Signup error:', error);
+            const errorMessage = error.response?.data?.message || error.message || 'Signup failed. Please try again.';
+            Alert.alert('Signup Failed', errorMessage);
         }
     };
 
