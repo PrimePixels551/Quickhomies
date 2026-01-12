@@ -5,10 +5,10 @@ const userSchema = mongoose.Schema(
     {
         name: { type: String, required: true },
         email: { type: String, required: false },
-        // Password is optional for regular users (customers), required for professionals
-        password: { type: String, required: false },
+        // Password is required for all users
+        password: { type: String, required: true },
         phone: { type: String, required: true, unique: true },
-        address: { type: String, required: true, },
+        address: { type: String, required: false },
         role: {
             type: String,
             enum: ['user', 'professional', 'admin'],
